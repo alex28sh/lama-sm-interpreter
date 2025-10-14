@@ -55,9 +55,21 @@ public:
         return *(fp + index);
     }
 
+    void set_local(const int32_t index, const uint64_t value) {
+        *(fp + index) = value;
+    }
+
+    void set_arg(const int32_t index, const uint64_t value) {
+        *(fp - 4 - index) = value;
+    }
+
     void push_op(const int32_t value) {
         *sp = value;
         __gc_stack_bottom = ++sp;
+    }
+
+    int32_t peek_op() const {
+        return *(sp - 1);
     }
 
     void pop_op() {

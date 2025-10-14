@@ -3,12 +3,32 @@
 //
 
 #pragma once
-#include "InstructionType.hpp"
+#include <cstddef>
 
-template <size_t args>
+template <std::size_t n_args>
 class SimpleInstructionWithArgs {
+public:
+    char instruction;
+    int args[n_args];
 
     static constexpr size_t length() {
-        return 1 + args * sizeof(int);
+        return 1 + n_args * sizeof(int);
+    }
+};
+
+typedef SimpleInstructionWithArgs<0> NoArgsInstruction;
+
+template <std::size_t n_args>
+class InstructionWithArgsLowerBits {
+public:
+    char instruction;
+    int args[n_args];
+
+    static constexpr size_t length() {
+        return 1 + n_args * sizeof(int);
+    }
+
+    constexpr char get_low_bits() {
+        return low_bits(instruction);
     }
 };

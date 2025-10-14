@@ -7,8 +7,12 @@
 
 void unboxing_tag(StackMachineState& state) {
 
+    /// TODO
+    throw std::runtime_error("not implemented");
 }
 
 void unboxing_array(StackMachineState& state) {
 
+    /// TODO
+    throw std::runtime_error("not implemented");
 }

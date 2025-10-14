@@ -15,9 +15,9 @@ constexpr char low_bits(char instruction) {
 
 class InstructionDecoder {
 
+public:
     const char* code_ptr;
 
-public:
     InstructionDecoder(const char* code_ptr) : code_ptr(code_ptr) {}
 
 

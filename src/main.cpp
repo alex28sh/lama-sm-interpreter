@@ -4,7 +4,7 @@
 #include "builtin_interpreters.hpp"
 #include "bytefile.h"
 #include "call_stack_interpreters.hpp"
-#include "cf_interpreters.hpp"
+#include "jump_interpreters.hpp"
 #include "helper_interpreters.hpp"
 #include "StackMachineState.hpp"
 #include "InstructionDecoder.hpp"
@@ -23,7 +23,7 @@
                 break;
             }
             case CONST: {
-                boxing_const(state);
+                stack_const(state);
                 break;
             }
             case SEXP: {

@@ -7,8 +7,6 @@
 
 void boxing_sexp(StackMachineState& state) {
 
-}
-
-void boxing_const(StackMachineState& state) {
-
+    /// TODO
+    throw std::runtime_error("not implemented");
 }
