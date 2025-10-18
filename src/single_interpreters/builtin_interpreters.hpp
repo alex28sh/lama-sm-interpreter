@@ -31,7 +31,8 @@ extern "C" {
 
 void call_read(StackMachineState& state) {
     state.instruction_decoder->consume_as<NoArgsInstruction>();
-    state.frame_stack.push_op(Lread());
+    auto val = Lread();
+    state.frame_stack.push_op(val);
 }
 
 void call_write(StackMachineState& state) {
@@ -72,5 +73,5 @@ void call_elem(StackMachineState& state) {
     auto b = state.frame_stack.peek_op();
     state.frame_stack.pop_op();
     auto res = Belem(reinterpret_cast<void *>(a), b);
-    state.frame_stack.push_op(reinterpret_cast<int32_t>(res));
+    state.frame_stack.push_op(reinterpret_cast<aint>(res));
 }

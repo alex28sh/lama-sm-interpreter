@@ -8,6 +8,8 @@
 #include "../runtime/runtime.h"
 #include <map>
 
+#include "boxing.hpp"
+
 enum BinOp : char {
     PLUS = 0x01,
     MINUS = 0x02,
@@ -24,12 +26,22 @@ enum BinOp : char {
     OR = 0x0D,
 };
 
-void boxed_unboxed(StackMachineState& state, const std::function<uint32_t(uint32_t, uint32_t)>& op) {
+inline void boxed_unboxed(StackMachineState& state, const std::function<uint32_t(uint32_t, uint32_t)>& op) {
+    auto b = unbox(state.frame_stack.peek_op());
+    state.frame_stack.pop_op();
+    auto a = unbox(state.frame_stack.peek_op());
+    state.frame_stack.pop_op();
+    auto res = op(a, b);
+    state.frame_stack.push_op(box(res));
+}
+
+inline void boxed(StackMachineState& state, const std::function<uint32_t(uint32_t, uint32_t)>& op) {
     auto b = state.frame_stack.peek_op();
     state.frame_stack.pop_op();
     auto a = state.frame_stack.peek_op();
     state.frame_stack.pop_op();
-    state.frame_stack.push_op(op(a, b));
+    auto res = op(a, b);
+    state.frame_stack.push_op(box(res));
 }
 
 const std::map<BinOp, std::function<uint32_t(uint32_t, uint32_t)>> BinOpMap = {
@@ -47,15 +59,13 @@ const std::map<BinOp, std::function<uint32_t(uint32_t, uint32_t)>> BinOpMap = {
 };
 
 void binop_interpeter(StackMachineState& state) {
-    auto inst = state.instruction_decoder->consume_as<SimpleInstructionWithArgs<1>>();
-    auto low_bits_inst = low_bits(inst.instruction);
+    auto inst = state.instruction_decoder->consume_as<InstructionWithArgsLowerBits<0>>();
+    auto low_bits_inst = static_cast<BinOp>(low_bits(inst.instruction));
     switch (low_bits_inst) {
         case EQ:
-            throw std::runtime_error("not implemented"); /// TODO: here should be done smth with boxing/unboxing
-            break;
         case NEQ:
-            throw std::runtime_error("not implemented"); /// TODO: here should be done smth with boxing/unboxing
-            break;
+            return boxed(state, BinOpMap.at(static_cast<BinOp>(low_bits_inst)));
+
         case PLUS:
         case MINUS:
         case MUL:
@@ -70,6 +80,6 @@ void binop_interpeter(StackMachineState& state) {
             boxed_unboxed(state, BinOpMap.at(static_cast<BinOp>(low_bits_inst)));
             break;
         default:
-            failure("Unknown binop %s", low_bits_inst);
+            failure("Unknown binop %d", (int)low_bits_inst);
     }
 }

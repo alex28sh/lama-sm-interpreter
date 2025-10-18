@@ -7,14 +7,16 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "../runtime/runtime_common.h"
+
 extern void *__gc_stack_top;
 extern void *__gc_stack_bottom;
 
 template<size_t max_stack>
 class FrameStack {
-    uint64_t* stack_data = new uint64_t[max_stack];
-    uint64_t *fp = nullptr;
-    uint64_t *sp = stack_data;
+    uint32_t* stack_data = new uint32_t[max_stack];
+    uint32_t *fp = nullptr;
+    uint32_t *sp = stack_data;
 
 public:
     FrameStack() {
@@ -38,12 +40,12 @@ public:
 
     const char* pop_stack_frame() {
         auto prev_fp = fp;
-        fp = reinterpret_cast<uint64_t*>(*(prev_fp - 2));
-        __gc_stack_bottom = sp = reinterpret_cast<uint64_t*>(*(prev_fp - 1));
+        fp = reinterpret_cast<uint32_t*>(*(prev_fp - 2));
+        __gc_stack_bottom = sp = reinterpret_cast<uint32_t*>(*(prev_fp - 1));
         return reinterpret_cast<const char*>(*(prev_fp - 3));
     }
 
-    [[nodiscard]] uint64_t get_arg(const int32_t index) const {
+    [[nodiscard]] uint32_t get_arg(const int32_t index) const {
         return *(fp - 4 - index);
     }
 
@@ -51,25 +53,29 @@ public:
         __gc_stack_bottom = sp += n_locals;
     }
 
-    [[nodiscard]] uint64_t get_local(const int32_t index) const {
+    [[nodiscard]] uint32_t get_local(const int32_t index) const {
         return *(fp + index);
     }
 
-    void set_local(const int32_t index, const uint64_t value) {
+    void set_local(const int32_t index, const uint32_t value) {
         *(fp + index) = value;
     }
 
-    void set_arg(const int32_t index, const uint64_t value) {
+    void set_arg(const int32_t index, const uint32_t value) {
         *(fp - 4 - index) = value;
     }
 
-    void push_op(const int32_t value) {
+    void push_op(const uint32_t value) {
         *sp = value;
         __gc_stack_bottom = ++sp;
     }
 
-    int32_t peek_op() const {
+    [[nodiscard]] uint32_t peek_op() const {
         return *(sp - 1);
+    }
+
+    [[nodiscard]] uint32_t peek_op(const int32_t index) const {
+        return *(sp - index);
     }
 
     void pop_op() {

@@ -18,10 +18,10 @@ class InstructionDecoder {
 public:
     const char* code_ptr;
 
-    InstructionDecoder(const char* code_ptr) : code_ptr(code_ptr) {}
+    explicit InstructionDecoder(const char* code_ptr) : code_ptr(code_ptr) {}
 
 
-    InstructionType next_instruction_type() const {
+    [[nodiscard]] InstructionType next_instruction_type() const {
         auto raw_instruction_type = static_cast<InstructionType>(*code_ptr);
 
         switch (high_bits(raw_instruction_type)) {

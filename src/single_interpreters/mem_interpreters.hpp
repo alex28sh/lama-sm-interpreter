@@ -34,7 +34,7 @@ void mem_load(StackMachineState& state) {
 
 void mem_store(StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<InstructionWithArgsLowerBits<1>>();
-    switch (inst.get_low_bits()) {
+    switch (static_cast<MemVar>(inst.get_low_bits())) {
         case Global:
             state.global_area[inst.args[0]] = state.frame_stack.peek_op();
             break;

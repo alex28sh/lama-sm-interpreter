@@ -6,7 +6,7 @@
 #include "StackMachineState.hpp"
 
 void call_stack_begin(StackMachineState& state) {
-    auto inst = state.instruction_decoder->consume_as<SimpleInstructionWithArgs<6>>();
+    auto inst = state.instruction_decoder->consume_as<SimpleInstructionWithArgs<2>>();
     auto n_locals = inst.args[1];
     state.frame_stack.reserve_locals(n_locals);
 }

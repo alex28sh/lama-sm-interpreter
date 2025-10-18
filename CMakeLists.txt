@@ -3,7 +3,7 @@ project(lama_sm_interpreter)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(lama_sm_interpreter src/main.cpp runtime/custom_data.c)
+add_executable(lama_sm_interpreter src/main.cpp runtime/custom_data.c bytefile/bytefile.c)
 
 target_link_libraries(lama_sm_interpreter ${CMAKE_SOURCE_DIR}/runtime/runtime.a)
 target_include_directories(lama_sm_interpreter PRIVATE

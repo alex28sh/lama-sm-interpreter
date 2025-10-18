@@ -15,10 +15,10 @@
 #include "../runtime/runtime.h"
 
 [[noreturn]] void interpret(bytefile *bf) {
-    auto decoder = InstructionDecoder(bf->code_ptr);
     auto state = StackMachineState(bf);
+    state.frame_stack.push_stack_frame(2, nullptr);
     while (true) {
-        switch (decoder.next_instruction_type()) {
+        switch (state.instruction_decoder->next_instruction_type()) {
             case BINOP: {
                 binop_interpeter(state);
                 break;
