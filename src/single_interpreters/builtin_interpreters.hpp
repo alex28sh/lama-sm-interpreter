@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include "InstructionDecodersByArgsNumber.hpp"
 #include "StackMachineState.hpp"
 
 extern "C" {

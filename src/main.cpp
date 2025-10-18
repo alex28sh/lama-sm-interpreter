@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "binop_interpreter.hpp"
 #include "boxing_interpreters.hpp"
 #include "builtin_interpreters.hpp"
 #include "bytefile.h"
@@ -19,7 +20,7 @@
     while (true) {
         switch (decoder.next_instruction_type()) {
             case BINOP: {
-
+                binop_interpeter(state);
                 break;
             }
             case CONST: {
