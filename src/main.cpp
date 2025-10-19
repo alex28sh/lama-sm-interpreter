@@ -16,7 +16,7 @@
 
 [[noreturn]] void interpret(bytefile *bf) {
     auto state = StackMachineState(bf);
-    state.frame_stack.push_stack_frame(2, nullptr);
+    state.frame_stack.push_stack_frame(0, nullptr);
     while (true) {
         switch (state.instruction_decoder->next_instruction_type()) {
             case BINOP: {

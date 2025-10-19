@@ -38,7 +38,6 @@ void call_read(StackMachineState& state) {
 void call_write(StackMachineState& state) {
     state.instruction_decoder->consume_as<NoArgsInstruction>();
     auto val = state.frame_stack.peek_op();
-    state.frame_stack.pop_op();
     Lwrite(val);
 }
 

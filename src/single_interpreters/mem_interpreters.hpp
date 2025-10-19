@@ -32,7 +32,7 @@ void mem_load(StackMachineState& state) {
     }
 }
 
-void mem_store(StackMachineState& state) {
+void mem_store(const StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<InstructionWithArgsLowerBits<1>>();
     switch (static_cast<MemVar>(inst.get_low_bits())) {
         case Global:
