@@ -8,7 +8,7 @@ else ifeq ($(UNAME_S),Darwin)
 endif
 
 DISABLE_WARNINGS=-Wno-shift-negative-value
-COMMON_FLAGS=$(DISABLE_WARNINGS) -g -fstack-protector-all $(ARCH) --std=c11
+COMMON_FLAGS=$(DISABLE_WARNINGS) -g -fstack-protector-all -fno-omit-frame-pointer -fno-optimize-sibling-calls $(ARCH) --std=c11
 PROD_FLAGS=$(COMMON_FLAGS) -DLAMA_ENV
 TEST_FLAGS=$(COMMON_FLAGS) -DDEBUG_VERSION
 UNIT_TESTS_FLAGS=$(TEST_FLAGS)

@@ -49,20 +49,21 @@ void call_length(StackMachineState& state) {
 }
 
 void call_string(StackMachineState& state) {
-    auto inst = state.instruction_decoder->consume_as<SimpleInstructionWithArgs<1>>();
-
-    /// TODO
-    throw std::runtime_error("not implemented");
+    auto inst = state.instruction_decoder->consume_as<NoArgsInstruction>();
+    auto a = state.frame_stack.peek_op();
+    state.frame_stack.pop_op();
+    auto res = Lstring(reinterpret_cast<aint *>(a));
+    state.frame_stack.push_op(reinterpret_cast<uint64_t>(res));
 }
 
 void call_array(StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<SimpleInstructionWithArgs<1>>();
     auto n_args = inst.args[0];
+    auto args_ptr = state.frame_stack.get_args_ptr(n_args);
 
+    auto res = Barray(reinterpret_cast<aint*>(args_ptr), n_args);
     state.frame_stack.pop_ops(n_args);
-
-    /// TODO
-    throw std::runtime_error("not implemented");
+    state.frame_stack.push_op(reinterpret_cast<uint64_t>(res));
 }
 
 void call_elem(StackMachineState& state) {
@@ -72,5 +73,5 @@ void call_elem(StackMachineState& state) {
     auto b = state.frame_stack.peek_op();
     state.frame_stack.pop_op();
     auto res = Belem(reinterpret_cast<void *>(a), b);
-    state.frame_stack.push_op(reinterpret_cast<aint>(res));
+    state.frame_stack.push_op(reinterpret_cast<uint64_t>(res));
 }

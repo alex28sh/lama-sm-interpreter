@@ -15,7 +15,11 @@ target_include_directories(lama_sm_interpreter PRIVATE
 
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32")
 
-#target_compile_options(lama_sm_interpreter PRIVATE
-##        -Wno-pointer-to-int-cast
+target_compile_options(lama_sm_interpreter PRIVATE
+        -fno-omit-frame-pointer
+        -fno-optimize-sibling-calls
+        -fstack-protector-all
+        -Ofast
+#        -Wno-pointer-to-int-cast
 #        -Wno-writable-strings
-#)
+)

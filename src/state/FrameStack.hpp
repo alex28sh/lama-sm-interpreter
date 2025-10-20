@@ -12,14 +12,19 @@
 extern void *__gc_stack_top;
 extern void *__gc_stack_bottom;
 
+static_assert(sizeof(size_t) == sizeof(uint64_t*));
+
 template<size_t max_stack>
 class FrameStack {
-    uint64_t* stack_data = new uint64_t[max_stack];
-    uint64_t *fp = nullptr;
-    uint64_t *sp = stack_data;
+    uint64_t* stack_data;
+    uint64_t *fp;
+    uint64_t *sp;
 
 public:
     FrameStack() {
+        stack_data = new uint64_t[max_stack];
+        fp = nullptr;
+        sp = stack_data;
         __gc_stack_top = stack_data;
         __gc_stack_bottom = stack_data;
     }
@@ -85,5 +90,9 @@ public:
 
     void pop_ops(const uint32_t n) {
         __gc_stack_bottom = sp -= n;
+    }
+
+    uint64_t* get_args_ptr(const u_int32_t n) {
+        return sp - n;
     }
 };
