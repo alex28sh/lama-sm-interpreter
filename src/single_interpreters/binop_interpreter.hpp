@@ -27,21 +27,21 @@ enum BinOp : char {
 };
 
 inline void boxed_unboxed(StackMachineState& state, const std::function<int64_t(int64_t, int64_t)>& op) {
-    auto b = unbox(state.frame_stack.peek_op());
-    state.frame_stack.pop_op();
-    auto a = unbox(state.frame_stack.peek_op());
-    state.frame_stack.pop_op();
+    auto b = unbox(state.frame_stack->peek_op());
+    state.frame_stack->pop_op();
+    auto a = unbox(state.frame_stack->peek_op());
+    state.frame_stack->pop_op();
     auto res = op(a, b);
-    state.frame_stack.push_op(box(res));
+    state.frame_stack->push_op(box(res));
 }
 
 inline void boxed(StackMachineState& state, const std::function<int64_t(int64_t, int64_t)>& op) {
-    auto b = state.frame_stack.peek_op();
-    state.frame_stack.pop_op();
-    auto a = state.frame_stack.peek_op();
-    state.frame_stack.pop_op();
+    auto b = state.frame_stack->peek_op();
+    state.frame_stack->pop_op();
+    auto a = state.frame_stack->peek_op();
+    state.frame_stack->pop_op();
     auto res = op(a, b);
-    state.frame_stack.push_op(box(res));
+    state.frame_stack->push_op(box(res));
 }
 
 const std::map<BinOp, std::function<int64_t(int64_t, int64_t)>> BinOpMap = {

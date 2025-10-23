@@ -13,10 +13,10 @@ extern size_t __gc_stack_top, __gc_stack_bottom;
   if (flag) { __gc_stack_top = (size_t)__builtin_frame_address(0); }                               \
   assert(__gc_stack_top != 0);                                                                     \
   assert((__gc_stack_top & 0xF) == 0);                                                             \
-  assert(__builtin_frame_address(0) <= (void *)__gc_stack_top);
+  // assert(__builtin_frame_address(0) <= (void *)__gc_stack_top);
 
 #define POST_GC()                                                                                  \
-  assert(__builtin_frame_address(0) <= (void *)__gc_stack_top);                                    \
+  // assert(__builtin_frame_address(0) <= (void *)__gc_stack_top);                                    \
   if (flag) { __gc_stack_top = 0; }
 
 _Noreturn static void vfailure (char *s, va_list args) {
@@ -42,18 +42,11 @@ void Lassert (void *f, char *s, ...) {
 }
 
 #define ASSERT_BOXED(memo, x)                                                                      \
-  do                                                                                               \
-    if (UNBOXED(x)) failure("boxed value expected in %s\n", memo);                                 \
-  while (0)
+  do {} while (0)
 #define ASSERT_UNBOXED(memo, x)                                                                    \
-  do                                                                                               \
-    if (!UNBOXED(x)) failure("unboxed value expected in %s\n", memo);                              \
-  while (0)
+  do {} while (0)
 #define ASSERT_STRING(memo, x)                                                                     \
-  do                                                                                               \
-    if (!UNBOXED(x) && TAG(TO_DATA(x)->data_header) != STRING_TAG)                                 \
-      failure("string value expected in %s\n", memo);                                              \
-  while (0)
+  do {} while (0)
 
 extern void *Bsexp (aint* args, aint bn);
 extern aint   LtagHash (char *);

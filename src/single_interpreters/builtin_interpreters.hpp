@@ -32,46 +32,46 @@ extern "C" {
 void call_read(StackMachineState& state) {
     state.instruction_decoder->consume_as<NoArgsInstruction>();
     auto val = Lread();
-    state.frame_stack.push_op(val);
+    state.frame_stack->push_op(val);
 }
 
 void call_write(StackMachineState& state) {
     state.instruction_decoder->consume_as<NoArgsInstruction>();
-    auto val = state.frame_stack.peek_op();
+    auto val = state.frame_stack->peek_op();
     Lwrite(val);
 }
 
 void call_length(StackMachineState& state) {
     state.instruction_decoder->consume_as<NoArgsInstruction>();
-    auto val = state.frame_stack.peek_op();
-    state.frame_stack.pop_op();
+    auto val = state.frame_stack->peek_op();
+    state.frame_stack->pop_op();
     Llength(reinterpret_cast<void *>(val));
 }
 
 void call_string(StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<NoArgsInstruction>();
-    auto a = state.frame_stack.peek_op();
-    state.frame_stack.pop_op();
+    auto a = state.frame_stack->peek_op();
+    state.frame_stack->pop_op();
     auto res = Lstring(reinterpret_cast<aint *>(a));
-    state.frame_stack.push_op(reinterpret_cast<uint64_t>(res));
+    state.frame_stack->push_op(reinterpret_cast<uint64_t>(res));
 }
 
 void call_array(StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<SimpleInstructionWithArgs<1>>();
     auto n_args = inst.args[0];
-    auto args_ptr = state.frame_stack.get_args_ptr(n_args);
+    auto args_ptr = state.frame_stack->get_args_ptr(n_args);
 
     auto res = Barray(reinterpret_cast<aint*>(args_ptr), n_args);
-    state.frame_stack.pop_ops(n_args);
-    state.frame_stack.push_op(reinterpret_cast<uint64_t>(res));
+    state.frame_stack->pop_ops(n_args);
+    state.frame_stack->push_op(reinterpret_cast<uint64_t>(res));
 }
 
 void call_elem(StackMachineState& state) {
     state.instruction_decoder->consume_as<NoArgsInstruction>();
-    auto a = state.frame_stack.peek_op();
-    state.frame_stack.pop_op();
-    auto b = state.frame_stack.peek_op();
-    state.frame_stack.pop_op();
-    auto res = Belem(reinterpret_cast<void *>(a), b);
-    state.frame_stack.push_op(reinterpret_cast<uint64_t>(res));
+    auto a = state.frame_stack->peek_op();
+    state.frame_stack->pop_op();
+    auto b = state.frame_stack->peek_op();
+    state.frame_stack->pop_op();
+    auto res = Belem(reinterpret_cast<void *>(b), a);
+    state.frame_stack->push_op(reinterpret_cast<uint64_t>(res));
 }

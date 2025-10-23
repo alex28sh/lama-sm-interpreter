@@ -3,6 +3,8 @@ project(lama_sm_interpreter)
 
 set(CMAKE_CXX_STANDARD 20)
 
+#add_definitions(-DLAMA_ENV)
+
 add_executable(lama_sm_interpreter src/main.cpp runtime/custom_data.c bytefile/bytefile.cpp)
 
 target_link_libraries(lama_sm_interpreter ${CMAKE_SOURCE_DIR}/runtime/runtime.a)
@@ -20,6 +22,7 @@ target_compile_options(lama_sm_interpreter PRIVATE
         -fno-optimize-sibling-calls
         -fstack-protector-all
         -Ofast
-#        -Wno-pointer-to-int-cast
+        -fno-inline -fno-inline-functions -fno-inline-small-functions
+        #        -Wno-pointer-to-int-cast
 #        -Wno-writable-strings
 )

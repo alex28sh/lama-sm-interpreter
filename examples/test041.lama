@@ -3,7 +3,7 @@ var x;
 fun f (a) {
   case a of
     A (x, y, z) -> write (x + y + z)
-  | B (x, y, z) -> write (x + y + z)
+  | B (x, y, z) -> write (x + y + z * 2)
   esac
 }
 
