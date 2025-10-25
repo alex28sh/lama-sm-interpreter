@@ -104,13 +104,13 @@ inline void print_instructions(bytefile *bf) {
             case CLOSURE:
             case CALLC:
             case PATT:
-                failure("not implemented");
+                throw std::runtime_error("not implemented");
             default:
                 if (*instruction_decoder.code_ptr == static_cast<char>(0xFF)) {
                     std::cout << "<end>" << std::endl;
                     return;
                 }
-                failure("unknown");
+                throw std::runtime_error("unknown");
         }
     }
 }

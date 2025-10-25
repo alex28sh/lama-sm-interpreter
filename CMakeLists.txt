@@ -13,9 +13,17 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(magic_enum)
 
+include(FetchContent)
+FetchContent_Declare(
+        fmt
+        GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+        GIT_TAG 10.1.1
+)
+FetchContent_MakeAvailable(fmt)
+
 add_executable(lama_sm_interpreter src/main.cpp runtime/custom_data.c bytefile/bytefile.cpp src/printers.hpp)
 
-target_link_libraries(lama_sm_interpreter ${CMAKE_SOURCE_DIR}/runtime/runtime.a magic_enum::magic_enum)
+target_link_libraries(lama_sm_interpreter ${CMAKE_SOURCE_DIR}/runtime/runtime.a magic_enum::magic_enum fmt::fmt)
 target_include_directories(lama_sm_interpreter PRIVATE
         ${CMAKE_SOURCE_DIR}/src/decoders
         ${CMAKE_SOURCE_DIR}/src/single_interpreters

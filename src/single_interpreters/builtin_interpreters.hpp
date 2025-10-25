@@ -50,7 +50,7 @@ inline void call_string(const StackMachineState& state) {
 inline void call_array(const StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<SimpleInstructionWithArgs<1>>();
     auto n_args = inst.args[0];
-    auto args_ptr = state.frame_stack->get_args_ptr(n_args);
+    auto args_ptr = state.frame_stack->get_ops_ptr(n_args);
 
     auto res = Barray(reinterpret_cast<aint*>(args_ptr), box(n_args));
     state.frame_stack->pop_ops(n_args);

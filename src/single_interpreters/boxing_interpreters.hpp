@@ -21,7 +21,7 @@ inline void boxing_sexp(const StackMachineState& state) {
     state.frame_stack->push_op(box(s));
 
     const auto n_args = inst.args[1] + 1;
-    const auto args_ptr = state.frame_stack->get_args_ptr(n_args);
+    const auto args_ptr = state.frame_stack->get_ops_ptr(n_args);
 
     auto res = Bsexp(reinterpret_cast<aint*>(args_ptr), box(n_args));
 

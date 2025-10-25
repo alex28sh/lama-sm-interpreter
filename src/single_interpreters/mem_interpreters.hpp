@@ -26,9 +26,9 @@ inline void mem_load(const StackMachineState& state) {
             state.frame_stack->push_op(state.frame_stack->get_arg(inst.args[0]));
             break;
         case Closure:
-            failure("Load for closure not implemented.");
+            throw std::runtime_error("Load for closure not implemented.");
         default:
-            failure("Invalid load instruction lower bits.");
+            throw std::runtime_error("Invalid load instruction lower bits.");
     }
 }
 
@@ -45,8 +45,8 @@ inline void mem_store(const StackMachineState& state) {
             state.frame_stack->set_arg(inst.args[0], state.frame_stack->peek_op());
             break;
         case Closure:
-            failure("Store for closure not implemented.");
+            throw std::runtime_error("Store for closure not implemented.");
         default:
-            failure("Invalid store instruction lower bits.");
+            throw std::runtime_error("Invalid store instruction lower bits.");
     }
 }

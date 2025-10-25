@@ -139,12 +139,12 @@ void interpret(bytefile *bf) {
                 case CLOSURE:
                 case CALLC:
                 case PATT:
-                    failure("not implemented");
+                    throw std::runtime_error("not implemented");
                 default:
-                    failure("unknown");
+                    throw std::runtime_error("unknown");
             }
         } catch (...) {
-            std::cout << "0x"
+            std::cerr << "0x"
                       << std::setw(8) << std::setfill('0') << std::hex
                       << state.instruction_decoder->code_ptr - bf->code_ptr
                       << ":\t" << std::dec;
@@ -166,6 +166,6 @@ int main(int argc, char *argv[]) {
     } else if (std::strcmp(argv[1], "-p") == 0) {
         print_instructions(bf);
     } else {
-        failure("wrong argument %s", argv[1]);
+        throw std::runtime_error(fmt::format("wrong argument {}", argv[1]));
     }
 }
