@@ -4,7 +4,7 @@
 #include <magic_enum/magic_enum.hpp>
 #include "bytefile.h"
 
-void print_instructions(bytefile *bf) {
+inline void print_instructions(bytefile *bf) {
     auto instruction_decoder = InstructionDecoder(bf->code_ptr);
 
     InstructionType instruction_type;

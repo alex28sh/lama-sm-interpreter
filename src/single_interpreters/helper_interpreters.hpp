@@ -7,11 +7,11 @@
 #include "StackMachineState.hpp"
 #include "../runtime/runtime.h"
 
-void helper_line(StackMachineState& state) {
+inline void helper_line(const StackMachineState& state) {
     state.instruction_decoder->consume_as<SimpleInstructionWithArgs<1>>();
 }
 
-void helper_fail(StackMachineState& state) {
+inline void helper_fail(const StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<SimpleInstructionWithArgs<2>>();
     failure("matching failure at %d", inst.args[0]);
 }

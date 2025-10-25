@@ -5,13 +5,13 @@
 #pragma once
 #include "StackMachineState.hpp"
 
-void call_stack_begin(StackMachineState& state) {
+inline void call_stack_begin(const StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<SimpleInstructionWithArgs<2>>();
     auto n_locals = inst.args[1];
     state.frame_stack->reserve_locals(n_locals);
 }
 
-void call_stack_end(StackMachineState& state) {
+inline void call_stack_end(const StackMachineState& state) {
     state.instruction_decoder->consume_as<NoArgsInstruction>();
 
     auto val = state.frame_stack->peek_op();
@@ -23,7 +23,7 @@ void call_stack_end(StackMachineState& state) {
     state.frame_stack->push_op(val);
 }
 
-void call_stack_call(StackMachineState& state) {
+inline void call_stack_call(const StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<SimpleInstructionWithArgs<2>>();
 
     auto ra = inst.args[0];

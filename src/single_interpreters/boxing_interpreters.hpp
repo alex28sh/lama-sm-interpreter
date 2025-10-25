@@ -14,7 +14,7 @@ extern "C" {
 
 static_assert(sizeof(void*) == sizeof(size_t));
 
-void boxing_sexp(StackMachineState& state) {
+inline void boxing_sexp(const StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<SimpleInstructionWithArgs<2>>();
 
     const auto s = inst.args[0];

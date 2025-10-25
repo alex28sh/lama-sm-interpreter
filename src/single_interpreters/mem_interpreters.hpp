@@ -13,7 +13,7 @@ enum MemVar : char {
     Closure = 0x03,
 };
 
-void mem_load(StackMachineState& state) {
+inline void mem_load(const StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<InstructionWithArgsLowerBits<1>>();
     switch (inst.get_low_bits()) {
         case Global:
@@ -32,7 +32,7 @@ void mem_load(StackMachineState& state) {
     }
 }
 
-void mem_store(const StackMachineState& state) {
+inline void mem_store(const StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<InstructionWithArgsLowerBits<1>>();
     switch (static_cast<MemVar>(inst.get_low_bits())) {
         case Global:

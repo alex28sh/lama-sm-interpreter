@@ -12,7 +12,7 @@ extern "C" {
     aint Btag (void *d, aint t, aint n);
 }
 
-void unboxing_tag(StackMachineState& state) {
+inline void unboxing_tag(const StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<SimpleInstructionWithArgs<2>>();
     auto tag = inst.args[0];
     auto n = inst.args[1];
@@ -24,7 +24,7 @@ void unboxing_tag(StackMachineState& state) {
     state.frame_stack->push_op(res);
 }
 
-void unboxing_array(StackMachineState& state) {
+inline void unboxing_array(const StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<SimpleInstructionWithArgs<1>>();
     auto ptr = reinterpret_cast<void*>(state.frame_stack->peek_op());
     state.frame_stack->pop_op();

@@ -20,26 +20,26 @@ extern "C" {
 
 }
 
-void call_read(StackMachineState& state) {
+inline void call_read(const StackMachineState& state) {
     state.instruction_decoder->consume_as<NoArgsInstruction>();
     auto val = Lread();
     state.frame_stack->push_op(val);
 }
 
-void call_write(StackMachineState& state) {
+inline void call_write(const StackMachineState& state) {
     state.instruction_decoder->consume_as<NoArgsInstruction>();
     auto val = state.frame_stack->peek_op();
     Lwrite(val);
 }
 
-void call_length(StackMachineState& state) {
+inline void call_length(const StackMachineState& state) {
     state.instruction_decoder->consume_as<NoArgsInstruction>();
     auto val = state.frame_stack->peek_op();
     state.frame_stack->pop_op();
     state.frame_stack->push_op(Llength(reinterpret_cast<void *>(val)));
 }
 
-void call_string(StackMachineState& state) {
+inline void call_string(const StackMachineState& state) {
     state.instruction_decoder->consume_as<NoArgsInstruction>();
     auto a = state.frame_stack->peek_op();
     state.frame_stack->pop_op();
@@ -47,7 +47,7 @@ void call_string(StackMachineState& state) {
     state.frame_stack->push_op(reinterpret_cast<uint64_t>(res));
 }
 
-void call_array(StackMachineState& state) {
+inline void call_array(const StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<SimpleInstructionWithArgs<1>>();
     auto n_args = inst.args[0];
     auto args_ptr = state.frame_stack->get_args_ptr(n_args);
@@ -57,7 +57,7 @@ void call_array(StackMachineState& state) {
     state.frame_stack->push_op(reinterpret_cast<uint64_t>(res));
 }
 
-void call_elem(StackMachineState& state) {
+inline void call_elem(const StackMachineState& state) {
     state.instruction_decoder->consume_as<NoArgsInstruction>();
     auto a = state.frame_stack->peek_op();
     state.frame_stack->pop_op();

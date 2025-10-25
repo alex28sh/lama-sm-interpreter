@@ -26,7 +26,7 @@ enum BinOp : char {
     OR = 0x0D,
 };
 
-inline void boxed_unboxed(StackMachineState& state, const std::function<int64_t(int64_t, int64_t)>& op) {
+inline void boxed_unboxed(const StackMachineState& state, const std::function<int64_t(int64_t, int64_t)>& op) {
     auto b = unbox(state.frame_stack->peek_op());
     state.frame_stack->pop_op();
     auto a = unbox(state.frame_stack->peek_op());
@@ -35,7 +35,7 @@ inline void boxed_unboxed(StackMachineState& state, const std::function<int64_t(
     state.frame_stack->push_op(box(res));
 }
 
-inline void boxed(StackMachineState& state, const std::function<int64_t(int64_t, int64_t)>& op) {
+inline void boxed(const StackMachineState& state, const std::function<int64_t(int64_t, int64_t)>& op) {
     auto b = state.frame_stack->peek_op();
     state.frame_stack->pop_op();
     auto a = state.frame_stack->peek_op();
@@ -60,7 +60,7 @@ const std::map<BinOp, std::function<int64_t(int64_t, int64_t)>> BinOpMap = {
     {NEQ, std::not_equal_to()},
 };
 
-void binop_interpeter(StackMachineState& state) {
+inline void binop_interpeter(const StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<InstructionWithArgsLowerBits<0>>();
     auto low_bits_inst = static_cast<BinOp>(low_bits(inst.instruction));
     switch (low_bits_inst) {
