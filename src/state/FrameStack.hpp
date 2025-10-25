@@ -40,9 +40,6 @@ public:
         fp = nullptr;
         sp = stack_data_links + global_area_size;
 
-        // fp1 = nullptr;
-        // sp1 = stack_data_links + global_area_size;
-
         __gc_stack_top = stack_data_links - 1;
         __gc_stack_bottom = (stack_data_links - 1) + global_area_size;
 
@@ -105,7 +102,6 @@ public:
 
     void set_local(const uint32_t index, const uint64_t value) const {
         **(fp + index) = value;
-    //     *(fp + index) = value;
     }
 
     void set_arg(const uint32_t index, const uint64_t value) const {

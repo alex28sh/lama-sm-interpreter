@@ -1,13 +1,21 @@
-cmake_minimum_required(VERSION 4.0)
+cmake_minimum_required(VERSION 3.30)
 project(lama_sm_interpreter)
 
 set(CMAKE_CXX_STANDARD 20)
 
 #add_definitions(-DLAMA_ENV)
+include(FetchContent)
+FetchContent_Declare(
+        magic_enum
+        GIT_REPOSITORY https://github.com/Neargye/magic_enum.git
+        GIT_TAG        v0.9.7        # Use latest released version
+)
 
-add_executable(lama_sm_interpreter src/main.cpp runtime/custom_data.c bytefile/bytefile.cpp)
+FetchContent_MakeAvailable(magic_enum)
 
-target_link_libraries(lama_sm_interpreter ${CMAKE_SOURCE_DIR}/runtime/runtime.a)
+add_executable(lama_sm_interpreter src/main.cpp runtime/custom_data.c bytefile/bytefile.cpp src/printers.hpp)
+
+target_link_libraries(lama_sm_interpreter ${CMAKE_SOURCE_DIR}/runtime/runtime.a magic_enum::magic_enum)
 target_include_directories(lama_sm_interpreter PRIVATE
         ${CMAKE_SOURCE_DIR}/src/decoders
         ${CMAKE_SOURCE_DIR}/src/single_interpreters
