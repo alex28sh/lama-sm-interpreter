@@ -144,10 +144,22 @@ void interpret(bytefile *bf) {
                     stack_swap(state);
                     break;
                 }
-                case STI:
-                case STA:
+                case STA: {
+                    stack_sta(state);
+                    break;
+                }
+                case STI: {
+                    stack_sti(state);
+                    break;
+                }
+                case LDA: {
+                    stack_lda(state);
+                    break;
+                }
+                // case LDA:
+                // case STA:
+                // case STI:
                 case RET:
-                case LDA:
                 case CLOSURE:
                 case CALLC:
                 case PATT:

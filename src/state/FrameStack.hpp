@@ -159,6 +159,11 @@ public:
         return stack_data[index + string_size];
     }
 
+    [[nodiscard]] uint64_t* get_global_link(const uint32_t index) const {
+        check_global(index);
+        return stack_data + index + string_size;
+    }
+
     void set_global(const uint32_t index, const uint64_t val) const {
         check_global(index);
         stack_data[index + string_size] = val;
@@ -217,6 +222,11 @@ public:
         return **(fp - 4 - index);
     }
 
+    [[nodiscard]] uint64_t* get_arg_link(const uint32_t index) const {
+        check_arg(index);
+        return *(fp - 4 - index);
+    }
+
     void set_arg(const uint32_t index, const uint64_t value) const {
         check_arg(index);
         **(fp - 4 - index) = value;
@@ -225,6 +235,11 @@ public:
     [[nodiscard]] uint64_t get_local(const uint32_t index) const {
         check_local(index);
         return **(fp + index);
+    }
+
+    [[nodiscard]] uint64_t* get_local_link(const uint32_t index) const {
+        check_local(index);
+        return *(fp + index);
     }
 
     void set_local(const uint32_t index, const uint64_t value) const {

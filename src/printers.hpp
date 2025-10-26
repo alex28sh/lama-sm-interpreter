@@ -25,6 +25,8 @@ inline void print_instructions(bytefile *bf) {
             case DUP:
             case DROP:
             case SWAP:
+            case STI:
+            case STA:
             case END: {
                 instruction_decoder.consume_as<NoArgsInstruction>();
                 std::cout << magic_enum::enum_name(instruction_type) << std::endl;
@@ -88,7 +90,8 @@ inline void print_instructions(bytefile *bf) {
                 break;
             }
             case LD:
-            case ST: {
+            case ST:
+            case LDA: {
                 // InstructionWithArgsLowerBits<1>
                 auto inst = instruction_decoder.consume_as<InstructionWithArgsLowerBits<1>>();
                 auto low_bits_inst = static_cast<MemVar>(low_bits(inst.instruction));
@@ -97,10 +100,7 @@ inline void print_instructions(bytefile *bf) {
                 std::cout << inst.args[0] << std::endl;
                 break;
             }
-            case STI:
-            case STA:
             case RET:
-            case LDA:
             case CLOSURE:
             case CALLC:
             case PATT:
