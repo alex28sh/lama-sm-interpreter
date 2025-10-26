@@ -7,7 +7,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <fmt/core.h>
+#include <map>
 
+#include "boxing.hpp"
 #include "../runtime/runtime_common.h"
 
 extern void *__gc_stack_top;
@@ -20,6 +22,15 @@ static_assert(sizeof(size_t) == sizeof(uint64_t*));
 static_assert(sizeof(uint64_t) == sizeof(uint64_t*));
 static_assert(sizeof(uint64_t) == sizeof(uint64_t**));
 
+extern "C" {
+#include "../runtime/runtime_common.h"
+
+    // void *Bsexp (aint* args, aint bn);
+    extern void *Bstring (aint* args);
+
+    extern void *LmakeString (aint length);
+}
+
 template<size_t max_stack>
 class FrameStack {
     uint64_t** stack_data_links;
@@ -28,8 +39,31 @@ class FrameStack {
     uint64_t **fp;
     uint64_t **sp;
 
-    int global_size;
+    std::map <uint32_t, uint32_t> strings_map {};
+
+public:
+    int global_size, string_size, string_counter;
     std::vector<int> local_sizes, arg_sizes, ops_size;
+
+    void check_string(const uint32_t index) const {
+        if (string_counter <= index) {
+            throw std::runtime_error(
+                fmt::format(
+                    "FrameStack: access to a string {}, that should be less than {}", index, string_size
+                    )
+                );
+        }
+    }
+
+    void check_global(const uint32_t index) const {
+        if (global_size <= index) {
+            throw std::runtime_error(
+                fmt::format(
+                    "FrameStack: access to a global {}, that should be less than {}", index, global_size
+                    )
+                );
+        }
+    }
 
     void check_ops(const uint32_t n) const {
         if (ops_size.empty()) {
@@ -48,20 +82,10 @@ class FrameStack {
         if (arg_sizes.empty()) {
             throw std::runtime_error("FrameStack: access an argument, when number of stack frames is 0");
         }
-        if (arg_sizes.back() <= index || index < 0) {
+        if (arg_sizes.back() <= index) {
             throw std::runtime_error(
                 fmt::format(
-                    "FrameStack: access to an argument {}, that should lie within 0 <= arg < {}", index, arg_sizes.back()
-                    )
-                );
-        }
-    }
-
-    void check_global(const uint32_t index) const {
-        if (global_size <= index || index < 0) {
-            throw std::runtime_error(
-                fmt::format(
-                    "FrameStack: access to a global {}, that should lie within 0 <= global < {}", index, global_size
+                    "FrameStack: access to an argument {}, that should be less than {}", index, arg_sizes.back()
                     )
                 );
         }
@@ -72,34 +96,51 @@ class FrameStack {
         if (local_sizes.empty()) {
             throw std::runtime_error("FrameStack: access a local, when locals are not reserved (that happens in BEGIN)");
         }
-        if (local_sizes.back() <= index || index < 0) {
+        if (local_sizes.back() <= index) {
             throw std::runtime_error(
                 fmt::format(
-                    "FrameStack: access to a local %d, that should lie within 0 <= local < %d", index, local_sizes.back()
+                    "FrameStack: access to a local %d, that should be less than < %d", index, local_sizes.back()
                     )
                 );
         }
     }
 
-public:
-    FrameStack(int global_area_size) {
+    FrameStack(char* string_ptr, int string_area_size, int global_area_size) {
         global_size = global_area_size;
+        string_size = string_area_size;
         stack_data_links = new uint64_t*[max_stack];
         stack_data = new uint64_t[max_stack];
-
         stack_data_links++;
-        for (uint32_t i = 0; i < global_area_size; i++) {
+        stack_data++;
+
+        for (uint32_t i = 0; i < string_area_size + global_area_size; i++) {
             stack_data_links[i] = stack_data + i;
         }
 
         fp = nullptr;
-        sp = stack_data_links + global_area_size;
+        sp = stack_data_links + global_area_size + string_area_size;
 
         __gc_stack_top = stack_data_links - 1;
-        __gc_stack_bottom = (stack_data_links - 1) + global_area_size;
+        __gc_stack_bottom = (stack_data_links - 1) + global_area_size + string_area_size;
 
         __start_custom_data = __gc_stack_top;
         __stop_custom_data = __start_custom_data;
+
+        string_counter = 0;
+        for (uint32_t i = 0; i < string_area_size; i++) {
+            // std::cerr << i << std::endl;
+            // std::cerr << string_ptr + i << std::endl;
+            auto ptr = new char*;
+            *ptr = (string_ptr + i);
+
+            // std::cerr << i << " " << (string_ptr + i) << std::endl;
+            strings_map[i] = string_counter;
+
+            auto b_string = Bstring(reinterpret_cast<aint *>(ptr));
+            stack_data_links[string_counter++] = reinterpret_cast<uint64_t*>(b_string);
+            auto len = strlen(string_ptr + i);
+            i += len;
+        }
     }
 
     ~FrameStack() {
@@ -107,14 +148,20 @@ public:
         delete[] stack_data;
     }
 
+    uint64_t* get_string_ptr(const uint32_t index) {
+        const uint32_t assoc_index = strings_map[index];
+        check_string(assoc_index);
+        return stack_data_links[assoc_index];
+    }
+
     [[nodiscard]] uint64_t get_global(const uint32_t index) const {
         check_global(index);
-        return stack_data[index];
+        return stack_data[index + string_size];
     }
 
     void set_global(const uint32_t index, const uint64_t val) const {
         check_global(index);
-        stack_data[index] = val;
+        stack_data[index + string_size] = val;
     }
 
     void push_stack_frame(const uint32_t nargs, const char* ra) {
@@ -136,10 +183,16 @@ public:
     }
 
     const char* pop_stack_frame() {
-        if (ops_size.empty() || ops_size.empty() || local_sizes.empty()) {
+        if (arg_sizes.empty() || ops_size.empty() || local_sizes.empty()) {
             throw std::runtime_error("Exiting wrongly initialized block with the END instruction");
         }
+        if (ops_size.back() != 1) {
+            throw std::runtime_error(fmt::format("When exiting ops stack size should be 1, but instead it {}", ops_size.back()));
+        }
         ops_size.pop_back();
+        if (!ops_size.empty()) {
+            ops_size.back() -= arg_sizes.back();
+        }
         arg_sizes.pop_back();
         local_sizes.pop_back();
 
@@ -179,21 +232,34 @@ public:
         **(fp + index) = value;
     }
 
+    void push_op_link(uint64_t* ptr) {
+        check_ops(0);
+        ops_size.back()++;
+        *sp = ptr;
+        __gc_stack_bottom = (++sp) - 1;
+    }
+
     void push_op(const uint64_t value) {
         check_ops(0);
         ops_size.back()++;
         auto cur_write_sp = (sp - stack_data_links) + stack_data;
         *sp = cur_write_sp;
         **sp = value;
+        // std::cerr << "push: " << **sp << std::endl;
         __gc_stack_bottom = (++sp) - 1;
     }
 
-    [[nodiscard]] uint64_t peek_op() const {
+    uint64_t peek_op() const {
         check_ops(1);
         return **(sp - 1);
     }
 
-    [[nodiscard]] uint64_t peek_op(const uint32_t index) const {
+    uint64_t* peek_op_ptr() const {
+        check_ops(1);
+        return *(sp - 1);
+    }
+
+    uint64_t peek_op(const uint32_t index) const {
         check_ops(index);
         return **(sp - index);
     }

@@ -24,6 +24,7 @@ inline void print_instructions(bytefile *bf) {
             case ELEM:
             case DUP:
             case DROP:
+            case SWAP:
             case END: {
                 instruction_decoder.consume_as<NoArgsInstruction>();
                 std::cout << magic_enum::enum_name(instruction_type) << std::endl;
@@ -44,7 +45,8 @@ inline void print_instructions(bytefile *bf) {
             case CONST:
             case CALL_ARRAY:
             case LINE:
-            case ARRAY: {
+            case ARRAY:
+            case STRING: {
                 // SimpleInstructionWithArgs<1>
                 auto inst = instruction_decoder.consume_as<SimpleInstructionWithArgs<1>>();
                 std::cout << magic_enum::enum_name(instruction_type) << " ";
@@ -66,7 +68,7 @@ inline void print_instructions(bytefile *bf) {
                 // SimpleInstructionWithArgs<2>
                 auto inst = instruction_decoder.consume_as<SimpleInstructionWithArgs<2>>();
                 std::cout << magic_enum::enum_name(instruction_type) << " ";
-                std::cout << get_string(bf, inst.args[0]) << " " << inst.args[1] << std::endl;
+                std::cout << get_string(bf, inst.args[0]) << "(" << inst.args[0] << ") " << inst.args[1] << std::endl;
                 break;
             }
             case BEGIN:
@@ -95,16 +97,14 @@ inline void print_instructions(bytefile *bf) {
                 std::cout << inst.args[0] << std::endl;
                 break;
             }
-            case STRING:
             case STI:
             case STA:
             case RET:
-            case SWAP:
             case LDA:
             case CLOSURE:
             case CALLC:
             case PATT:
-                throw std::runtime_error("not implemented");
+                throw std::runtime_error(fmt::format("not implemented {}", magic_enum::enum_name(instruction_type)));
             default:
                 if (*instruction_decoder.code_ptr == static_cast<char>(0xFF)) {
                     std::cout << "<end>" << std::endl;

@@ -14,7 +14,7 @@ inline void jump_if_zero(const StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<SimpleInstructionWithArgs<1>>();
     auto val = state.frame_stack->peek_op();
     state.frame_stack->pop_op();
-    if (val == box(0)) {
+    if (val == box_int(0)) {
         state.instruction_decoder->code_ptr = (state.bf->code_ptr + inst.args[0]);
     }
 }
@@ -23,7 +23,7 @@ inline void jump_if_not_zero(const StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<SimpleInstructionWithArgs<1>>();
     auto val = state.frame_stack->peek_op();
     state.frame_stack->pop_op();
-    if (val != box(0)) {
+    if (val != box_int(0)) {
         state.instruction_decoder->code_ptr = (state.bf->code_ptr + inst.args[0]);
     }
 }

@@ -19,11 +19,13 @@
 
 StackMachineState* external_state;
 
-
 void segfaultHandler(int signal) {
     std::cerr << "Caught SIGSEGV!" << std::endl;
+    std::cerr << "0x"
+              << std::setw(8) << std::setfill('0') << std::hex
+              << external_state->instruction_decoder->code_ptr - external_state->bf->code_ptr
+              << ":\t" << std::dec;
     std::cerr << magic_enum::enum_name(external_state->instruction_decoder->next_instruction_type()) << std::endl;
-    std::cerr << external_state->frame_stack->peek_op() << std::endl;
     exit(1);
 }
 
@@ -37,6 +39,10 @@ void interpret(bytefile *bf) {
         InstructionType inst;
         try {
             inst = state.instruction_decoder->next_instruction_type();
+            // std::cerr << magic_enum::enum_name(inst) << std::endl;
+            // if (!state.frame_stack->ops_size.empty()) {
+            //     std::cerr << state.frame_stack->ops_size.back() << std::endl;
+            // }
             switch (inst) {
                 case BINOP: {
                     binop_interpeter(state);
@@ -130,16 +136,22 @@ void interpret(bytefile *bf) {
                     helper_line(state);
                     break;
                 }
-                case STRING:
+                case STRING: {
+                    boxing_string(state);
+                    break;
+                }
+                case SWAP: {
+                    stack_swap(state);
+                    break;
+                }
                 case STI:
                 case STA:
                 case RET:
-                case SWAP:
                 case LDA:
                 case CLOSURE:
                 case CALLC:
                 case PATT:
-                    throw std::runtime_error("not implemented");
+                    throw std::runtime_error(fmt::format("not implemented {}", magic_enum::enum_name(inst)));
                 default:
                     throw std::runtime_error("unknown");
             }
