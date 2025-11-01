@@ -32,6 +32,7 @@ enum InstructionType : char {
     CALL_STRING = 0x73,
     CALL_ARRAY = 0x74,
     BEGIN = 0x52,
+    CBEGIN = 0x53,
     CLOSURE = 0x54,
     CALLC = 0x55,
     CALL = 0x56,

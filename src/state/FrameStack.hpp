@@ -23,11 +23,9 @@ static_assert(sizeof(uint64_t) == sizeof(uint64_t*));
 static_assert(sizeof(uint64_t) == sizeof(uint64_t**));
 
 extern "C" {
-#include "../runtime/runtime_common.h"
-
-    // void *Bsexp (aint* args, aint bn);
+    void *Belem (void *p, aint i);
+    void *Bsta (void *x, aint i, void *v);
     extern void *Bstring (aint* args);
-
     extern void *LmakeString (aint length);
 }
 
@@ -169,7 +167,10 @@ public:
         stack_data[index + string_size] = val;
     }
 
-    void push_stack_frame(const uint32_t nargs, const char* ra) {
+    void push_stack_frame(const uint32_t nargs, const char* ra, const uint32_t isClosure = 0) {
+        if (!ops_size.empty()) {
+            ops_size.back() -= isClosure;
+        }
         ops_size.push_back(0);
         arg_sizes.push_back(nargs);
         if (nargs > 1) std::reverse(sp - nargs, sp);
@@ -181,7 +182,7 @@ public:
 
         *cur_write_sp = reinterpret_cast<uint64_t>(ra);
         *(cur_write_sp + 1) = reinterpret_cast<uint64_t>(fp);
-        *(cur_write_sp + 2) = reinterpret_cast<uint64_t>(sp - nargs);
+        *(cur_write_sp + 2) = reinterpret_cast<uint64_t>(sp - nargs - isClosure);
 
         __gc_stack_bottom = (sp += 3) - 1;
         fp = sp;
@@ -201,10 +202,16 @@ public:
         arg_sizes.pop_back();
         local_sizes.pop_back();
 
+        // std::cerr << "pop_stack_frame" << std::endl;
+
         uint64_t** prev_fp = fp;
+        // std::cerr << "prev_fp" << std::endl;
         fp = reinterpret_cast<uint64_t**>(**(prev_fp - 2));
+        std::cerr << "pop_stack_frame " << reinterpret_cast<uint64_t>(fp) << std::endl;
         __gc_stack_bottom = (sp = reinterpret_cast<uint64_t**>(**(prev_fp - 1))) - 1;
+        // std::cerr << "pop_stack_bottom" << std::endl;
         auto ret = reinterpret_cast<const char*>(**(prev_fp - 3));
+        // std::cerr << reinterpret_cast<uint64_t>(ret) << std::endl;
         return ret;
     }
 
@@ -217,8 +224,35 @@ public:
         __gc_stack_bottom = (sp += n_locals) - 1;
     }
 
+    [[nodiscard]] uint64_t get_closure(const uint32_t index) const {
+        // auto closure_ptr = reinterpret_cast<void*>(*reinterpret_cast<uint64_t**>(*(fp - 1) - 1));
+        // std::cerr << "get_closure " << arg_sizes.back() << std::endl;
+        auto closure_ptr = reinterpret_cast<void*>(**(fp - 4 - arg_sizes.back()));
+        // std::
+        // std::cerr << "closure " << index << std::endl;
+        auto elem = Belem(closure_ptr, box_int(index + 1));
+        // std::cerr << "get_closure: " << reinterpret_cast<uint64_t>(elem) << std::endl;
+        // std::cerr << "get_closure: " << *reinterpret_cast<uint64_t*>(elem) << std::endl;
+        // std::cerr << "get_closure: " << *reinterpret_cast<uint64_t*>(elem) << std::endl;
+        return reinterpret_cast<uint64_t>(elem);
+    }
+
+    [[nodiscard]] uint64_t *get_closure_link(const uint32_t index) const {
+        // auto closure_ptr = reinterpret_cast<void*>(*reinterpret_cast<uint64_t**>(*(fp - 1) - 1));
+        auto closure_ptr = reinterpret_cast<void*>(**(fp - 4 - arg_sizes.back()));
+        auto elem = Belem(closure_ptr, box_int(index + 1));
+        return reinterpret_cast<uint64_t *>(elem);
+    }
+
+    void set_closure(const uint32_t index, const uint64_t val) const {
+        // auto closure_ptr = reinterpret_cast<void*>(*(*(fp - 1) - 1));
+        auto closure_ptr = reinterpret_cast<void*>(**(fp - 4 - arg_sizes.back()));
+        Bsta(closure_ptr, box_int(index + 1), reinterpret_cast<void*>(val));
+    }
+
     [[nodiscard]] uint64_t get_arg(const uint32_t index) const {
         check_arg(index);
+        // std::cerr << "get_arg: " << **(fp - 4 - index) << std::endl;
         return **(fp - 4 - index);
     }
 

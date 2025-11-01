@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <magic_enum/magic_enum.hpp>
 #include "bytefile.h"
+#include "patt.hpp"
 
 inline void print_instructions(bytefile *bf) {
     auto instruction_decoder = InstructionDecoder(bf->code_ptr);
@@ -27,6 +28,7 @@ inline void print_instructions(bytefile *bf) {
             case SWAP:
             case STI:
             case STA:
+            case RET:
             case END: {
                 instruction_decoder.consume_as<NoArgsInstruction>();
                 std::cout << magic_enum::enum_name(instruction_type) << std::endl;
@@ -48,7 +50,8 @@ inline void print_instructions(bytefile *bf) {
             case CALL_ARRAY:
             case LINE:
             case ARRAY:
-            case STRING: {
+            case STRING:
+            case CALLC: {
                 // SimpleInstructionWithArgs<1>
                 auto inst = instruction_decoder.consume_as<SimpleInstructionWithArgs<1>>();
                 std::cout << magic_enum::enum_name(instruction_type) << " ";
@@ -65,6 +68,27 @@ inline void print_instructions(bytefile *bf) {
                           << " " << inst.args[1] << std::endl;
                 break;
             }
+            case CLOSURE: {
+                auto inst = instruction_decoder.consume_as<SimpleInstructionWithArgs<2>>();
+                auto n_args = inst.args[1];
+                Designations designations = {};
+                for (uint32_t i = 0; i < n_args; i++) {
+                    designations.push_back(instruction_decoder.consume_as<Designation>());
+                }
+
+                std::cout << magic_enum::enum_name(instruction_type) << " ";
+                std::cout << "0x"
+                          << std::setw(8) << std::setfill('0') << std::hex
+                          << inst.args[0] << std::dec
+                          << " " << inst.args[1] << std::endl;
+
+                for (auto designation : designations) {
+                    std::cout << magic_enum::enum_name(designation.mem_var) << " " << designation.value << std::endl;
+                }
+                std::cout << std::endl;
+
+                break;
+            }
             case SEXP:
             case TAG: {
                 // SimpleInstructionWithArgs<2>
@@ -74,6 +98,7 @@ inline void print_instructions(bytefile *bf) {
                 break;
             }
             case BEGIN:
+            case CBEGIN:
             case FAIL: {
                 // SimpleInstructionWithArgs<2>
                 auto inst = instruction_decoder.consume_as<SimpleInstructionWithArgs<2>>();
@@ -100,11 +125,14 @@ inline void print_instructions(bytefile *bf) {
                 std::cout << inst.args[0] << std::endl;
                 break;
             }
-            case RET:
-            case CLOSURE:
-            case CALLC:
-            case PATT:
-                throw std::runtime_error(fmt::format("not implemented {}", magic_enum::enum_name(instruction_type)));
+            case PATT: {
+                auto inst = instruction_decoder.consume_as<InstructionWithArgsLowerBits<0>>();
+                auto low_bits_inst = static_cast<Patt>(low_bits(inst.instruction));
+                std::cout << magic_enum::enum_name(instruction_type) << " ";
+                std::cout << magic_enum::enum_name(low_bits_inst) << std::endl;
+                break;
+                // throw std::runtime_error(fmt::format("not implemented {}", magic_enum::enum_name(instruction_type)));
+            }
             default:
                 if (*instruction_decoder.code_ptr == static_cast<char>(0xFF)) {
                     std::cout << "<end>" << std::endl;

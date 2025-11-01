@@ -14,6 +14,7 @@
 #include "mem_interpreters.hpp"
 #include "stack_ops_interpreters.hpp"
 #include "unboxing_interpreters.hpp"
+#include "closures.hpp"
 #include "../runtime/runtime.h"
 #include "printers.hpp"
 
@@ -38,11 +39,17 @@ void interpret(bytefile *bf) {
     while (true) {
         InstructionType inst;
         try {
+            std::cerr << "0x"
+                  << std::setw(8) << std::setfill('0') << std::hex
+                  << state.instruction_decoder->code_ptr - bf->code_ptr
+                  << ": " << std::dec;
+
             inst = state.instruction_decoder->next_instruction_type();
-            // std::cerr << magic_enum::enum_name(inst) << std::endl;
-            // if (!state.frame_stack->ops_size.empty()) {
-            //     std::cerr << state.frame_stack->ops_size.back() << std::endl;
-            // }
+
+            std::cerr << magic_enum::enum_name(inst) << std::endl;
+            if (!state.frame_stack->ops_size.empty()) {
+                std::cerr << state.frame_stack->ops_size.back() << std::endl;
+            }
             switch (inst) {
                 case BINOP: {
                     binop_interpeter(state);
@@ -104,6 +111,7 @@ void interpret(bytefile *bf) {
                     call_array(state);
                     break;
                 }
+                case CBEGIN:
                 case BEGIN: {
                     call_stack_begin(state);
                     break;
@@ -156,14 +164,19 @@ void interpret(bytefile *bf) {
                     stack_lda(state);
                     break;
                 }
-                // case LDA:
-                // case STA:
-                // case STI:
+                case CLOSURE: {
+                    closures_create(state);
+                    break;
+                }
+                case CALLC: {
+                    closures_call(state);
+                    break;
+                }
+                case PATT: {
+                    patt(state);
+                    break;
+                }
                 case RET:
-                case CLOSURE:
-                case CALLC:
-                case PATT:
-                    throw std::runtime_error(fmt::format("not implemented {}", magic_enum::enum_name(inst)));
                 default:
                     throw std::runtime_error("unknown");
             }

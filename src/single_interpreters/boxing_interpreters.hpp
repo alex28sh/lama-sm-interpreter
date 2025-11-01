@@ -36,9 +36,9 @@ inline void boxing_string(const StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<SimpleInstructionWithArgs<1>>();
     auto string_ptr = state.frame_stack->get_string_ptr(inst.args[0]);
     // std::cerr << *(char*)string_ptr << std::endl;
-    auto d = TO_DATA(string_ptr);
+    // auto d = TO_DATA(string_ptr);
     // std::cerr << "TO_DATA " << d->contents << std::endl;
-    auto val = reinterpret_cast<uint64_t>(string_ptr);
+    // auto val = reinterpret_cast<uint64_t>(string_ptr);
     // std::cerr << val << " " << box_ptr(val) << " " << unbox(box_ptr(val)) << std::endl;
     state.frame_stack->push_op((reinterpret_cast<uint64_t>(string_ptr)));
 }

@@ -75,14 +75,6 @@ inline void call_elem(const StackMachineState& state) {
     state.frame_stack->pop_op();
     auto b = (state.frame_stack->peek_op());
     state.frame_stack->pop_op();
-    // std::cerr << *reinterpret_cast<char *>(b) << " " << unbox(a) << std::endl;
-
-    // auto boxed = reinterpret_cast<void*>(box(reinterpret_cast<uint64_t>(b)));
-
     auto res = Belem(reinterpret_cast<void *>(b), a);
-    // std::cerr << "ELEM: " << a << " " << reinterpret_cast<uint64_t>(res) << std::endl;
-    // auto d = TO_DATA(b);
-    // std::cerr<< b << " " << d->contents << std::endl;
-    // std::cerr << static_cast<char>(unbox(reinterpret_cast<uint64_t>(res))) << std::endl;
     state.frame_stack->push_op(reinterpret_cast<uint64_t>(res));
 }

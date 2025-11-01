@@ -26,9 +26,9 @@ inline void call_stack_end(const StackMachineState& state) {
 inline void call_stack_call(const StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<SimpleInstructionWithArgs<2>>();
 
-    auto ra = inst.args[0];
+    auto jump = inst.args[0];
     auto nargs = inst.args[1];
 
     state.frame_stack->push_stack_frame(nargs, state.instruction_decoder->code_ptr);
-    state.instruction_decoder->code_ptr = (state.bf->code_ptr + ra);
+    state.instruction_decoder->code_ptr = (state.bf->code_ptr + jump);
 }
