@@ -49,14 +49,14 @@ Running:
 
 ```
 Parametrized count for length 1
-DROP: 43
+DROP: 41
 DUP: 35
 ELEM: 25
 CONST 1: 18
 CONST 0: 14
 LD Argument 0: 8
 END: 6
-JMP 944: 5
+JMP 908: 5
 ST Local 0: 4
 SEXP 0 2: 4
 LD Local 0: 4
@@ -64,9 +64,9 @@ TAG 0 2: 3
 ARRAY 2: 3
 LD Local 3: 3
 LD Local 1: 3
-JMP 532: 3
-CALL 533 1: 3
+JMP 496: 3
 CALL_ARRAY 2: 3
+CALL 497 1: 3
 ...
 
 Parametrized count for length 2
@@ -82,7 +82,7 @@ ST Local 0; DROP: 4
 ELEM; ST Local 0: 4
 DUP; TAG 0 2: 3
 DUP; ARRAY 2: 3
-CALL_ARRAY 2; JMP 944: 3
+CALL_ARRAY 2; JMP 908: 3
 DROP; LD Local 0: 3
 ...
 

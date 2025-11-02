@@ -33,6 +33,4 @@ fun print_array (l) {
     esac
 }
 
-var generated = generate(2000);
-var sorted = bubbleSort (generated);
-print_array(sorted)
+bubbleSort (generate (2000))
