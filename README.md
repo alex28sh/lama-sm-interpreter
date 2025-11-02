@@ -40,6 +40,8 @@ lamac -i Sort.lama
 
 ### Instruction sequences analysis
 
+Analyzer is placed in [src/analyzer](src/analyzer).
+
 Running:
 ```
 ./lama_sm_interpreter -p Sort.bc
