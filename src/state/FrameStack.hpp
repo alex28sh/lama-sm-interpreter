@@ -207,7 +207,7 @@ public:
         uint64_t** prev_fp = fp;
         // std::cerr << "prev_fp" << std::endl;
         fp = reinterpret_cast<uint64_t**>(**(prev_fp - 2));
-        std::cerr << "pop_stack_frame " << reinterpret_cast<uint64_t>(fp) << std::endl;
+        // std::cerr << "pop_stack_frame " << reinterpret_cast<uint64_t>(fp) << std::endl;
         __gc_stack_bottom = (sp = reinterpret_cast<uint64_t**>(**(prev_fp - 1))) - 1;
         // std::cerr << "pop_stack_bottom" << std::endl;
         auto ret = reinterpret_cast<const char*>(**(prev_fp - 3));

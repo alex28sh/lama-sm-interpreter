@@ -70,17 +70,17 @@ inline void closures_create(const StackMachineState& state) {
     state.frame_stack->push_op(reinterpret_cast<uint64_t >(res));
     // state.frame_stack->push_op_link((reinterpret_cast<uint64_t*>(res)));
     // state.frame_stack->push_op_link(reinterpret_cast<uint64_t *>(res));
-    std::cerr << reinterpret_cast<uint64_t>(res) << std::endl;
+    // std::cerr << reinterpret_cast<uint64_t>(res) << std::endl;
 
     auto a = TO_DATA(res);
-    std::cerr << "TO_DATA(a)" << std::endl;
-    std::cerr << reinterpret_cast<uint64_t>(a) << std::endl;
-    std::cerr << TAG(a->data_header) << std::endl;
-
-    std::cerr << "create_Belem" << std::endl;
+    // std::cerr << "TO_DATA(a)" << std::endl;
+    // std::cerr << reinterpret_cast<uint64_t>(a) << std::endl;
+    // std::cerr << TAG(a->data_header) << std::endl;
+    //
+    // std::cerr << "create_Belem" << std::endl;
     auto elem = Belem(res, box_int(0));
-    std::cerr << "create_elem" << std::endl;
-    std::cerr << reinterpret_cast<uint64_t>(elem) << std::endl;
+    // std::cerr << "create_elem" << std::endl;
+    // std::cerr << reinterpret_cast<uint64_t>(elem) << std::endl;
 
     // auto ptr = reinterpret_cast<void*>(unbox(state.frame_stack->peek_op()));
     // auto elem = Belem(ptr, box_int(0 + 1));
@@ -93,23 +93,23 @@ inline void closures_call(const StackMachineState& state) {
 
     auto closure_ptr = reinterpret_cast<void*>(*state.frame_stack->get_ops_ptr(nargs + 1));
 
-    std::cerr << "Belem" << std::endl;
-    std::cerr << reinterpret_cast<uint64_t>(closure_ptr) << std::endl;
-    auto a = TO_DATA(closure_ptr);
-    std::cerr << "TO_DATA(a)" << std::endl;
-    std::cerr << reinterpret_cast<uint64_t>(a) << std::endl;
-    std::cerr << TAG(a->data_header) << std::endl;
+    // std::cerr << "Belem" << std::endl;
+    // std::cerr << reinterpret_cast<uint64_t>(closure_ptr) << std::endl;
+    // auto a = TO_DATA(closure_ptr);
+    // std::cerr << "TO_DATA(a)" << std::endl;
+    // std::cerr << reinterpret_cast<uint64_t>(a) << std::endl;
+    // std::cerr << TAG(a->data_header) << std::endl;
     auto elem = Belem(closure_ptr, box_int(0));
-    std::cerr << "elem" << std::endl;
-    std::cerr << reinterpret_cast<uint64_t>(elem) << std::endl;
+    // std::cerr << "elem" << std::endl;
+    // std::cerr << reinterpret_cast<uint64_t>(elem) << std::endl;
 
     auto jump = unbox(reinterpret_cast<uint64_t>(elem));
 
     // std::cerr << *jump << std::endl;
 
-    std::cerr << "0x"
-              << std::setw(8) << std::setfill('0') << std::hex
-              << jump << std::dec << std::endl;
+    // std::cerr << "0x"
+    //           << std::setw(8) << std::setfill('0') << std::hex
+    //           << jump << std::dec << std::endl;
 
     state.frame_stack->push_stack_frame(nargs, state.instruction_decoder->code_ptr, 1);
     state.instruction_decoder->code_ptr = state.bf->code_ptr + jump;

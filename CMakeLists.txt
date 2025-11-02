@@ -25,6 +25,7 @@ add_executable(lama_sm_interpreter src/main.cpp runtime/custom_data.c bytefile/b
 
 target_link_libraries(lama_sm_interpreter ${CMAKE_SOURCE_DIR}/runtime/runtime.a magic_enum::magic_enum fmt::fmt)
 target_include_directories(lama_sm_interpreter PRIVATE
+        ${CMAKE_SOURCE_DIR}/src/analyzer
         ${CMAKE_SOURCE_DIR}/src/decoders
         ${CMAKE_SOURCE_DIR}/src/single_interpreters
         ${CMAKE_SOURCE_DIR}/src/state

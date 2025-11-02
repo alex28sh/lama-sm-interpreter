@@ -2,6 +2,7 @@
 #include <cstring>
 #include <iostream>
 
+#include "Analyzer.hpp"
 #include "binop_interpreter.hpp"
 #include "boxing_interpreters.hpp"
 #include "builtin_interpreters.hpp"
@@ -39,17 +40,21 @@ void interpret(bytefile *bf) {
     while (true) {
         InstructionType inst;
         try {
-            std::cerr << "0x"
-                  << std::setw(8) << std::setfill('0') << std::hex
-                  << state.instruction_decoder->code_ptr - bf->code_ptr
-                  << ": " << std::dec;
+            // std::cerr << "0x"
+            //       << std::setw(8) << std::setfill('0') << std::hex
+            //       << state.instruction_decoder->code_ptr - bf->code_ptr
+            //       << ": " << std::dec;
+            // std::cerr << "0x"
+            //       << std::setw(8) << std::setfill('0') << std::hex
+            //       << reinterpret_cast<uint64_t>(state.frame_stack->sp)
+            //       << " " << std::dec;
 
             inst = state.instruction_decoder->next_instruction_type();
 
-            std::cerr << magic_enum::enum_name(inst) << std::endl;
-            if (!state.frame_stack->ops_size.empty()) {
-                std::cerr << state.frame_stack->ops_size.back() << std::endl;
-            }
+            // std::cerr << magic_enum::enum_name(inst) << std::endl;
+            // if (!state.frame_stack->ops_size.empty()) {
+            //     std::cerr << state.frame_stack->ops_size.back() << std::endl;
+            // }
             switch (inst) {
                 case BINOP: {
                     binop_interpeter(state);
@@ -198,7 +203,11 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
     bytefile *bf = read_file(argv[2]);
-    if (std::strcmp(argv[1], "-i") == 0) {
+    if (std::strcmp(argv[1], "-a") == 0) {
+        auto analyzer = Analyzer(bf->code_ptr);
+        analyzer.analyze();
+        analyzer.results();
+    } else if (std::strcmp(argv[1], "-i") == 0) {
         interpret(bf);
     } else if (std::strcmp(argv[1], "-p") == 0) {
         print_instructions(bf);

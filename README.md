@@ -14,7 +14,9 @@ make # Or any other generator
 ```
 ./lama_sm_interpreter -i ../examples/Sort.bc # interpreting
 or 
-./lama_sm_interpreter -b ../examples/Sort.bc # printing readable bytecode instructions
+./lama_sm_interpreter -p ../examples/Sort.bc # printing readable bytecode instructions
+or 
+./lama_sm_interpreter -a ../examples/Sort.bc # analyze instruction sequences frequency
 ```
 
 You can check on programs in `examples` directory. 
@@ -35,3 +37,55 @@ lamac -i Sort.lama
 ##### Results:
 * 6.4s - my version
 * 15s - lama interpreter
+
+### Instruction sequences analysis
+
+Running:
+```
+./lama_sm_interpreter -p Sort.bc
+```
+
+#### Results (truncated):
+
+```
+Parametrized count for length 1
+DROP: 43
+DUP: 35
+ELEM: 25
+CONST 1: 18
+CONST 0: 14
+LD Argument 0: 8
+END: 6
+JMP 944: 5
+ST Local 0: 4
+SEXP 0 2: 4
+LD Local 0: 4
+TAG 0 2: 3
+ARRAY 2: 3
+LD Local 3: 3
+LD Local 1: 3
+JMP 532: 3
+CALL 533 1: 3
+CALL_ARRAY 2: 3
+...
+
+Parametrized count for length 2
+CONST 1; ELEM: 15
+DROP; DUP: 14
+DROP; DROP: 13
+DUP; CONST 1: 13
+CONST 0; ELEM: 10
+DUP; CONST 0: 9
+ELEM; DROP: 9
+DUP; DUP: 5
+ST Local 0; DROP: 4
+ELEM; ST Local 0: 4
+DUP; TAG 0 2: 3
+DUP; ARRAY 2: 3
+CALL_ARRAY 2; JMP 944: 3
+DROP; LD Local 0: 3
+...
+
+Process finished with exit code 0
+
+```
