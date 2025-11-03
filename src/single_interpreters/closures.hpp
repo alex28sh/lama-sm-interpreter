@@ -33,10 +33,15 @@ inline void closures_create(const StackMachineState& state) {
     auto ip = inst.args[0];
     auto n_args = inst.args[1];
 
-    state.frame_stack->push_op(box_int(ip));
+    Designations designations = {};
 
     for (uint32_t i = 0; i < n_args; i++) {
         auto designation = state.instruction_decoder->consume_as<Designation>();
+        designations.push_back(designation);
+    }
+    std::reverse(designations.begin(), designations.end());
+
+    for (auto designation : designations) {
         auto index = designation.value;
         // std::cerr << magic_enum::enum_name(designation.mem_var) << " " << index << std::endl;
 
@@ -59,26 +64,28 @@ inline void closures_create(const StackMachineState& state) {
         }
     }
 
-    auto args_ptr = state.frame_stack->get_ops_ptr(n_args + 1);
+    state.frame_stack->push_op(box_int(ip));
+
+    // auto args_ptr = state.frame_stack->get_ops_ptr(n_args + 1);
 
     // for (int i = 0; i < n_args; i++) {
     //     std::cerr << "Stored value " << *(args_ptr + i + 1) << std::endl;
     // }
 
-    auto res = Bclosure(reinterpret_cast<aint*>(args_ptr), box_int(n_args));
+    auto res = Bclosure(reinterpret_cast<aint*>(__gc_stack_top + 1), box_int(n_args));
     state.frame_stack->pop_ops(n_args + 1);
     state.frame_stack->push_op(reinterpret_cast<uint64_t >(res));
     // state.frame_stack->push_op_link((reinterpret_cast<uint64_t*>(res)));
     // state.frame_stack->push_op_link(reinterpret_cast<uint64_t *>(res));
     // std::cerr << reinterpret_cast<uint64_t>(res) << std::endl;
 
-    auto a = TO_DATA(res);
+    // auto a = TO_DATA(res);
     // std::cerr << "TO_DATA(a)" << std::endl;
     // std::cerr << reinterpret_cast<uint64_t>(a) << std::endl;
     // std::cerr << TAG(a->data_header) << std::endl;
     //
     // std::cerr << "create_Belem" << std::endl;
-    auto elem = Belem(res, box_int(0));
+    // auto elem = Belem(res, box_int(0));
     // std::cerr << "create_elem" << std::endl;
     // std::cerr << reinterpret_cast<uint64_t>(elem) << std::endl;
 
@@ -91,7 +98,7 @@ inline void closures_call(const StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<SimpleInstructionWithArgs<1>>();
     auto nargs = inst.args[0];
 
-    auto closure_ptr = reinterpret_cast<void*>(*state.frame_stack->get_ops_ptr(nargs + 1));
+    auto closure_ptr = reinterpret_cast<void*>(*(__gc_stack_top + 1 + nargs));
 
     // std::cerr << "Belem" << std::endl;
     // std::cerr << reinterpret_cast<uint64_t>(closure_ptr) << std::endl;

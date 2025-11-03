@@ -44,10 +44,6 @@ void interpret(bytefile *bf) {
             //       << std::setw(8) << std::setfill('0') << std::hex
             //       << state.instruction_decoder->code_ptr - bf->code_ptr
             //       << ": " << std::dec;
-            // std::cerr << "0x"
-            //       << std::setw(8) << std::setfill('0') << std::hex
-            //       << reinterpret_cast<uint64_t>(state.frame_stack->sp)
-            //       << " " << std::dec;
 
             inst = state.instruction_decoder->next_instruction_type();
 

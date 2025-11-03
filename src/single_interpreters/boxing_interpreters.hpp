@@ -21,12 +21,15 @@ inline void boxing_sexp(const StackMachineState& state) {
     const auto tag = inst.args[0];
     auto tag_ptr = state.frame_stack->get_string_ptr(tag);
 
+    // std::cerr << "sexp: " << tag << std::endl;
+    // std::cerr << "tag_ptr: " << reinterpret_cast<uint64_t>(tag_ptr) << std::endl;
+    // std::cerr << "hash: " << LtagHash(reinterpret_cast<char*>(tag_ptr)) << std::endl;
     state.frame_stack->push_op(LtagHash(reinterpret_cast<char*>(tag_ptr)));
 
     const auto n_args = inst.args[1] + 1;
-    const auto args_ptr = state.frame_stack->get_ops_ptr(n_args);
+    // const auto args_ptr = state.frame_stack->get_ops_ptr(n_args);
 
-    auto res = Bsexp(reinterpret_cast<aint*>(args_ptr), box_int(n_args));
+    auto res = Bsexp(reinterpret_cast<aint *>(__gc_stack_top + 1), box_int(n_args));
 
     state.frame_stack->pop_ops(n_args);
     state.frame_stack->push_op((reinterpret_cast<uint64_t>(res)));

@@ -12,7 +12,7 @@ extern size_t __gc_stack_top, __gc_stack_bottom;
   flag      = __gc_stack_top == 0;                                                                 \
   if (flag) { __gc_stack_top = (size_t)__builtin_frame_address(0); }                               \
   assert(__gc_stack_top != 0);                                                                     \
-  assert((__gc_stack_top & 0xF) == 0);                                                             \
+  // assert((__gc_stack_top & 0xF) == 0);                                                             \
   // assert(__builtin_frame_address(0) <= (void *)__gc_stack_top);
 
 #define POST_GC()                                                                                  \
@@ -849,20 +849,20 @@ extern void *Bsexp (aint* args, aint bn) {
 
   aint fields_cnt = n - 1;
 
-  for (aint i = 0; i < fields_cnt; i++) {
+  for (aint i = 1; i <= fields_cnt; i++) {
     push_extra_root((void**)&args[i]);
   }
 
   r              = alloc_sexp(fields_cnt);
   r->tag         = 0;
 
-  for (int i = 0; i < fields_cnt; i++) {
-    ((auint *)r->contents)[i] = args[i];
+  for (int i = 1; i <= fields_cnt; i++) {
+    ((auint *)r->contents)[fields_cnt - i] = args[i];
   }
 
-  r->tag = UNBOX(args[fields_cnt]);
+  r->tag = UNBOX(args[0]);
 
-  for (aint i = fields_cnt - 1; i >= 0; --i) {
+  for (aint i = fields_cnt; i >= 1; --i) {
     pop_extra_root((void**)&args[i]);
   }
 

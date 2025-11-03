@@ -62,9 +62,11 @@ inline void call_string(const StackMachineState& state) {
 inline void call_array(const StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<SimpleInstructionWithArgs<1>>();
     auto n_args = inst.args[0];
-    auto args_ptr = state.frame_stack->get_ops_ptr(n_args);
+    // auto args_ptr = state.frame_stack->get_ops_ptr(n_args);
 
-    auto res = Barray(reinterpret_cast<aint*>(args_ptr), box_int(n_args));
+    std::reverse(__gc_stack_top + 1, __gc_stack_top + 1 + n_args);
+
+    auto res = Barray(reinterpret_cast<aint *>(__gc_stack_top + 1), box_int(n_args));
     state.frame_stack->pop_ops(n_args);
     state.frame_stack->push_op((reinterpret_cast<uint64_t>(res)));
 }
