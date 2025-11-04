@@ -17,15 +17,12 @@ extern "C" {
 inline void unboxing_tag(const StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<SimpleInstructionWithArgs<2>>();
     auto tag = inst.args[0];
-    // std::cerr << "tag: " << tag << std::endl;
+
     auto tag_ptr = state.frame_stack->get_string_ptr(tag);
-    // std::cerr << "tag_ptr: " << reinterpret_cast<uint64_t>(tag_ptr) << std::endl;
-    // std::cerr << "hash: " << LtagHash(reinterpret_cast<char*>(tag_ptr)) << std::endl;
     auto n = inst.args[1];
-
     auto ptr = reinterpret_cast<void*>((state.frame_stack->peek_op()));
-    state.frame_stack->pop_op();
 
+    state.frame_stack->pop_op();
     auto res = Btag(ptr, LtagHash(reinterpret_cast<char*>(tag_ptr)), box_int(n));
     state.frame_stack->push_op(res);
 }

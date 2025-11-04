@@ -9,10 +9,6 @@ constexpr int64_t box_int(int64_t value) {
     return (value << 1) | 1;
 }
 
-constexpr int64_t box_ptr(int64_t value) {
-    return (value << 1);
-}
-
 constexpr int64_t unbox(int64_t value) {
     return value >> 1;
 }

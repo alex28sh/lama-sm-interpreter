@@ -23,10 +23,10 @@ StackMachineState* external_state;
 
 void segfaultHandler(int signal) {
     std::cerr << "Caught SIGSEGV!" << std::endl;
-    std::cerr << "0x"
+    std::cerr << "index: 0x"
               << std::setw(8) << std::setfill('0') << std::hex
-              << external_state->instruction_decoder->code_ptr - external_state->bf->code_ptr
-              << ":\t" << std::dec;
+              << external_state->instruction_decoder->code_ptr - external_state->bf->code_ptr - 1
+              << "\n" << std::dec;
     std::cerr << magic_enum::enum_name(external_state->instruction_decoder->next_instruction_type()) << std::endl;
     exit(1);
 }
@@ -39,18 +39,10 @@ void interpret(bytefile *bf) {
     signal(SIGSEGV, segfaultHandler);
     while (true) {
         InstructionType inst;
+        bool is_correct_inst = false;
         try {
-            // std::cerr << "0x"
-            //       << std::setw(8) << std::setfill('0') << std::hex
-            //       << state.instruction_decoder->code_ptr - bf->code_ptr
-            //       << ": " << std::dec;
-
             inst = state.instruction_decoder->next_instruction_type();
-
-            // std::cerr << magic_enum::enum_name(inst) << std::endl;
-            // if (!state.frame_stack->ops_size.empty()) {
-            //     std::cerr << state.frame_stack->ops_size.back() << std::endl;
-            // }
+            is_correct_inst = true;
             switch (inst) {
                 case BINOP: {
                     binop_interpeter(state);
@@ -179,16 +171,29 @@ void interpret(bytefile *bf) {
                 }
                 case RET:
                 default:
-                    throw std::runtime_error("unknown");
+                    is_correct_inst = false;
+                    throw std::runtime_error("Unknown instruction");
             }
-        } catch (...) {
-            std::cerr << "0x"
+        } catch (const std::runtime_error& e) {
+            std::cerr << "index: 0x"
                       << std::setw(8) << std::setfill('0') << std::hex
-                      << state.instruction_decoder->code_ptr - bf->code_ptr
-                      << ":\t" << std::dec;
-            std::cerr << magic_enum::enum_name(inst) << std::endl;
-
-            throw;
+                      << state.instruction_decoder->code_ptr - bf->code_ptr - 1
+                      << "\n" << std::dec;
+            if (is_correct_inst) {
+                std::cerr << magic_enum::enum_name(inst) << std::endl;
+            }
+            std::cerr << e.what() << std::endl;
+            exit(1);
+        } catch (...) {
+            std::cerr << "index: 0x"
+                      << std::setw(8) << std::setfill('0') << std::hex
+                      << state.instruction_decoder->code_ptr - bf->code_ptr - 1
+                      << "\n" << std::dec;
+            if (is_correct_inst) {
+                std::cerr << magic_enum::enum_name(inst) << std::endl;
+            }
+            std::cerr << "Unknown exception occurred" << std::endl;
+            exit(1);
         }
     }
 }

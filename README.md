@@ -35,7 +35,7 @@ lamac -i Sort.lama
 ```
 
 ##### Results:
-* 6.4s - my version
+* 25s - my version
 * 15s - lama interpreter
 
 ### Instruction sequences analysis

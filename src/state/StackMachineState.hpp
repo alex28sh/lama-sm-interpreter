@@ -12,8 +12,8 @@ class StackMachineState {
 public:
     explicit StackMachineState(bytefile* bf) {
         this->bf = bf;
-        frame_stack = new FrameStack<stack_size>(bf->string_ptr, bf->stringtab_size, bf->global_area_size);
         instruction_decoder = new InstructionDecoder(bf->code_ptr);
+        frame_stack = new FrameStack<stack_size>(bf->string_ptr, bf->stringtab_size, bf->global_area_size);
     }
 
     bytefile *bf;

@@ -7,7 +7,6 @@
 #include "StackMachineState.hpp"
 
 extern "C" {
-#include "../runtime/runtime.h"
 #include "../runtime/runtime_common.h"
 
     aint  Lread (void);
@@ -17,7 +16,6 @@ extern "C" {
     void *Belem (void *p, aint i);
     void *Lstring (aint* args);
     void *Barray (aint* args, aint bn);
-
 }
 
 inline void call_read(const StackMachineState& state) {
@@ -37,7 +35,6 @@ inline void call_length(const StackMachineState& state) {
     auto val = (state.frame_stack->peek_op());
     state.frame_stack->pop_op();
     auto res = Llength(reinterpret_cast<void *>(val));
-    // std::cerr << "Length " << res << std::endl;
     state.frame_stack->push_op(res);
 }
 
@@ -52,8 +49,6 @@ inline void call_string(const StackMachineState& state) {
         *ptr = reinterpret_cast<aint *>((a));
         res = Lstring(reinterpret_cast<aint *>(ptr));
     }
-    // std::cerr << "call_string " << is_boxed_int(a) << " ";
-    // std::cerr << Llength(res) << std::endl;
 
     state.frame_stack->pop_op();
     state.frame_stack->push_op((reinterpret_cast<uint64_t>(res)));
@@ -62,7 +57,6 @@ inline void call_string(const StackMachineState& state) {
 inline void call_array(const StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<SimpleInstructionWithArgs<1>>();
     auto n_args = inst.args[0];
-    // auto args_ptr = state.frame_stack->get_ops_ptr(n_args);
 
     std::reverse(__gc_stack_top + 1, __gc_stack_top + 1 + n_args);
 

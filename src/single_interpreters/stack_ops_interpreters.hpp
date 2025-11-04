@@ -6,7 +6,6 @@
 #include "StackMachineState.hpp"
 
 extern "C" {
-#include "../runtime/runtime.h"
 #include "../runtime/runtime_common.h"
 
     void *Bsta (void *x, aint i, void *v);

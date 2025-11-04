@@ -4,7 +4,6 @@
 
 #pragma once
 #include "StackMachineState.hpp"
-#include <stdio.h>
 
 extern "C" {
     #include "../runtime/runtime_common.h"
@@ -21,14 +20,9 @@ inline void boxing_sexp(const StackMachineState& state) {
     const auto tag = inst.args[0];
     auto tag_ptr = state.frame_stack->get_string_ptr(tag);
 
-    // std::cerr << "sexp: " << tag << std::endl;
-    // std::cerr << "tag_ptr: " << reinterpret_cast<uint64_t>(tag_ptr) << std::endl;
-    // std::cerr << "hash: " << LtagHash(reinterpret_cast<char*>(tag_ptr)) << std::endl;
     state.frame_stack->push_op(LtagHash(reinterpret_cast<char*>(tag_ptr)));
 
     const auto n_args = inst.args[1] + 1;
-    // const auto args_ptr = state.frame_stack->get_ops_ptr(n_args);
-
     auto res = Bsexp(reinterpret_cast<aint *>(__gc_stack_top + 1), box_int(n_args));
 
     state.frame_stack->pop_ops(n_args);
@@ -38,10 +32,5 @@ inline void boxing_sexp(const StackMachineState& state) {
 inline void boxing_string(const StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<SimpleInstructionWithArgs<1>>();
     auto string_ptr = state.frame_stack->get_string_ptr(inst.args[0]);
-    // std::cerr << *(char*)string_ptr << std::endl;
-    // auto d = TO_DATA(string_ptr);
-    // std::cerr << "TO_DATA " << d->contents << std::endl;
-    // auto val = reinterpret_cast<uint64_t>(string_ptr);
-    // std::cerr << val << " " << box_ptr(val) << " " << unbox(box_ptr(val)) << std::endl;
     state.frame_stack->push_op((reinterpret_cast<uint64_t>(string_ptr)));
 }
