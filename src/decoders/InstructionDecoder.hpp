@@ -6,7 +6,7 @@
 #include "InstructionType.hpp"
 
 constexpr char high_bits(char instruction) {
-    return static_cast<char>((instruction & 0xF0) >> 4);
+    return instruction & 0xF0;
 }
 
 constexpr char low_bits(char instruction) {

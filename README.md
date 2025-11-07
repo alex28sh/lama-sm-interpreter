@@ -50,42 +50,34 @@ Running:
 #### Results (truncated):
 
 ```
-Parametrized count for length 1
-DROP: 41
-DUP: 35
-ELEM: 25
-CONST 1: 18
-CONST 0: 14
-LD Argument 0: 8
-END: 6
-JMP 908: 5
-ST Local 0: 4
-SEXP 0 2: 4
-LD Local 0: 4
-TAG 0 2: 3
-ARRAY 2: 3
-LD Local 3: 3
-LD Local 1: 3
-JMP 496: 3
-CALL_ARRAY 2: 3
-CALL 497 1: 3
-...
-
-Parametrized count for length 2
-CONST 1; ELEM: 15
-DROP; DUP: 14
-DROP; DROP: 13
-DUP; CONST 1: 13
-CONST 0; ELEM: 10
-DUP; CONST 0: 9
-ELEM; DROP: 9
-DUP; DUP: 5
-ST Local 0; DROP: 4
-ELEM; ST Local 0: 4
-DUP; TAG 0 2: 3
-DUP; ARRAY 2: 3
-CALL_ARRAY 2; JMP 908: 3
-DROP; LD Local 0: 3
+DROP : 31
+DUP : 28
+ELEM : 21
+CONST 1 : 16
+CONST 1; ELEM : 13
+CONST 0 : 11
+DUP; CONST 1 : 11
+DROP; DUP : 11
+DROP; DROP : 10
+CONST 0; ELEM : 8
+LD 34 0 : 7
+DUP; CONST 0 : 7
+ELEM; DROP : 7
+END : 5
+JMP 908 : 4
+SEXP 0 2 : 4
+DUP; DUP : 4
+ELEM; ST 65 0 : 3
+DUP; ARRAY 2 : 3
+ST 65 0; DROP : 3
+CALL_ARRAY 2 : 3
+ARRAY 2 : 3
+CALL 497 1 : 3
+ST 65 0 : 3
+CALL_ARRAY 2; JMP 908 : 3
+LD 33 3 : 3
+LD 33 0 : 3
+JMP 496 : 3
 ...
 
 Process finished with exit code 0

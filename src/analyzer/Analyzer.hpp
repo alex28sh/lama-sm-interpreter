@@ -1,5 +1,7 @@
 #pragma once
 #include <map>
+#include <queue>
+#include <unordered_set>
 #include <vector>
 #include <magic_enum/magic_enum.hpp>
 
@@ -8,43 +10,104 @@
 #include "InstructionDecodersByArgsNumber.hpp"
 #include "mem_interpreters.hpp"
 
-class Analyzer {
-
-    struct Instruction {
-        std::string instruction_type;
-        std::vector<uint32_t> args;
-
-        bool operator==(const Instruction&) const = default;
-        auto operator<=>(const Instruction&) const = default;
+#pragma pack(push, 1)
+    struct InstructionElement {
+        uint8_t tag; // also encodes type: 0, 1, 2
+        union {
+            struct { uint32_t a; uint32_t b; } two;
+            struct { uint32_t a; } one;
+            struct { } none;
+        } data;
     };
 
-    std::vector<int> labels;
-    std::map<int, std::map<std::vector<Instruction>, int>> sequences_counter;
-    std::vector<Instruction> cur_sequence;
+struct Sequence {
+    uint8_t count;   // 1 or 2
+    InstructionElement elems[2];
+};
 
-    void flush_instructions() {
-        cur_sequence.clear();
-    }
+#pragma pack(pop)
 
-    void add_instruction(Instruction instruction) {
-        cur_sequence.push_back(instruction);
-        for (int i = 1; i <= std::min(2, (int)cur_sequence.size()); i++) {
-            std::vector suffix(cur_sequence.end() - i, cur_sequence.end());
-            if (!sequences_counter.contains(i)) {
-                sequences_counter[i] = std::map<std::vector<Instruction>, int>();
-            }
-            sequences_counter[i][suffix]++;
+bool operator<(const Sequence& lhs, const Sequence& rhs) {
+    // Compare binary memory since structs are tightly packed
+    return std::memcmp(&lhs, &rhs, sizeof(Sequence)) < 0;
+}
+
+bool operator==(const Sequence& lhs, const Sequence& rhs) {
+    return std::memcmp(&lhs, &rhs, sizeof(Sequence)) == 0;
+}
+
+class Analyzer {
+
+    std::map<Sequence, int> sequences_counter;
+
+    InstructionElement prev_elem;
+    bool prev_initialized = false;
+
+    void add_instruction(InstructionElement instruction) {
+        Sequence seq1{};
+        seq1.count = 1;
+        seq1.elems[0] = instruction;
+        sequences_counter[seq1]++;
+
+        if (prev_initialized) {
+            Sequence seq2{};
+            seq2.count = 2;
+            seq2.elems[0] = prev_elem;
+            seq2.elems[1] = instruction;
+            sequences_counter[seq2]++;
         }
+
+        prev_initialized = true;
+        prev_elem = instruction;
     }
 
-    void collect_labels() {
+    std::unordered_set<int> visited_labels;
+    std::queue<int> labels;
 
-        bool finish = false;
-        while (!finish) {
+    void process_label(int label) {
 
-            auto cur_offset = instruction_decoder.code_ptr - code_ptr;
+        prev_initialized = false;
 
-            auto instruction_type = instruction_decoder.next_instruction_type();
+        auto cur_ptr = bf->code_ptr + label;
+
+        bool traverse = true;
+
+        while (traverse) {
+            auto raw_instruction_type = static_cast<InstructionType>(*cur_ptr);
+
+            if (visited_labels.contains(cur_ptr - bf->code_ptr)) {
+                return;
+            }
+
+            visited_labels.insert(cur_ptr - bf->code_ptr);
+
+            InstructionType instruction_type;
+            switch (high_bits(raw_instruction_type)) {
+                case 0x00 :
+                    instruction_type = BINOP;
+                    break;
+                case 0x20 :
+                    instruction_type = LD;
+                    break;
+                case 0x30 :
+                    instruction_type = LDA;
+                    break;
+                case 0x40 :
+                    instruction_type = ST;
+                    break;
+                case 0x60 :
+                    instruction_type = PATT;
+                    break;
+                default:
+                    instruction_type = raw_instruction_type;
+                    break;
+            }
+
+            InstructionElement elem{};
+            elem.tag = static_cast<uint8_t>(instruction_type);
+
+            // std::cerr << label << " " << magic_enum::enum_name(static_cast<InstructionType>(elem.tag)) << std::endl;
+
             switch (instruction_type) {
                 case CALL_READ:
                 case CALL_WRITE:
@@ -55,116 +118,138 @@ class Analyzer {
                 case DROP:
                 case SWAP:
                 case STI:
-                case STA:
+                case STA: {
+                    cur_ptr += 1;
+                    add_instruction(elem);
+                    break;
+                }
                 case RET:
                 case END: {
-                    instruction_decoder.consume_as<NoArgsInstruction>();
+                    cur_ptr += 1;
+                    add_instruction(elem);
+                    traverse = false;
                     break;
                 }
                 case JMP:
                 case CJMPz:
-                case CJMPnz: {
-                    auto inst = instruction_decoder.consume_as<SimpleInstructionWithArgs<1>>();
-                    labels.push_back(inst.args[0]);
-                    break;
-                }
+                case CJMPnz:
                 case CONST:
                 case CALL_ARRAY:
-                case LINE:
                 case ARRAY:
                 case STRING:
                 case CALLC: {
-                    // SimpleInstructionWithArgs<1>
-                    instruction_decoder.consume_as<SimpleInstructionWithArgs<1>>();
+                    auto arg = *reinterpret_cast<const uint32_t*>(cur_ptr + 1);
+                    cur_ptr += 1 + sizeof(uint32_t);
+                    elem.data.one.a = arg;
+                    add_instruction(elem);
+
+                    if (instruction_type == JMP) {
+                        cur_ptr = bf->code_ptr + arg;
+                    } else if (instruction_type == CJMPnz || instruction_type == CJMPz) {
+                        labels.push(arg);
+                    }
                     break;
                 }
                 case CALL:
-                case CLOSURE: {
-                    auto inst = instruction_decoder.consume_as<SimpleInstructionWithArgs<2>>();
-                    labels.push_back(inst.args[0]);
-                    break;
-                }
+                case CLOSURE:
                 case SEXP:
                 case TAG:
-                case FAIL: {
-                    instruction_decoder.consume_as<SimpleInstructionWithArgs<2>>();
-                    break;
-                }
                 case BEGIN:
                 case CBEGIN: {
-                    // SimpleInstructionWithArgs<2>
-                    instruction_decoder.consume_as<SimpleInstructionWithArgs<2>>();
-                    labels.push_back(cur_offset);
+                    auto arg1 = *reinterpret_cast<const uint32_t*>(cur_ptr + 1);
+                    auto arg2 = *reinterpret_cast<const uint32_t*>(cur_ptr + 1 + sizeof(uint32_t));
+                    elem.data.two.a = arg1;
+                    elem.data.two.b = arg2;
+                    add_instruction(elem);
+
+                    cur_ptr += 1 + 2 * sizeof(uint32_t);
+
+                    if ((instruction_type == CALL || instruction_type == CLOSURE)) {
+                        labels.push(arg1);
+                    }
                     break;
                 }
                 case BINOP:
                 case PATT: {
-                    instruction_decoder.consume_as<InstructionWithArgsLowerBits<0>>();
+                    elem.data.one.a = static_cast<uint32_t>(raw_instruction_type);
+                    add_instruction(elem);
+                    cur_ptr += 1;
                     break;
                 }
                 case LD:
                 case ST:
                 case LDA: {
-                    // InstructionWithArgsLowerBits<1>
-                    instruction_decoder.consume_as<InstructionWithArgsLowerBits<1>>();
+                    auto arg = *reinterpret_cast<const uint32_t*>(cur_ptr + 1);
+                    elem.data.two.a = static_cast<uint32_t>(raw_instruction_type);
+                    elem.data.two.b = arg;
+                    add_instruction(elem);
+                    cur_ptr += 1 + sizeof(uint32_t);
+                    break;
+                }
+                case LINE: {
+                    cur_ptr += 1 + sizeof(uint32_t);
+                    break;
+                }
+                case FAIL: {
+                    cur_ptr += 1 + 2 * sizeof(uint32_t);
                     break;
                 }
                 default:
-                    if (*instruction_decoder.code_ptr == static_cast<char>(0xFF)) {
-                        finish = true;
-                        labels.push_back(cur_offset);
-                        break;
+                    if (*cur_ptr == static_cast<char>(0xFF)) {
+                        throw std::runtime_error("unreachable code");
                     }
                     throw std::runtime_error("invalid instruction type");
             }
-
         }
-        sort(labels.begin(), labels.end());
     }
 
-    void collect_sequences() {
+public:
 
-        InstructionType instruction_type;
+    bytefile* bf;
 
-        for (int i = 0; i < labels.size() - 1; ++i) {
+    explicit Analyzer(bytefile* bf) : bf(bf) {}
 
-            flush_instructions();
+    void analyze() {
+        for (int i = 0; i < bf->public_symbols_number; i++) {
+            auto symbol_offset = get_public_offset(bf, i);
+            labels.push(symbol_offset);
+        }
+        while (!labels.empty()) {
+            auto label = labels.front();
+            labels.pop();
+            process_label(label);
+        }
+    }
 
-            instruction_decoder.code_ptr = code_ptr + labels[i];
-            while (instruction_decoder.code_ptr < code_ptr + labels[i + 1]) {
+    void results() {
+        std::vector<std::pair<Sequence, int>> items(sequences_counter.begin(), sequences_counter.end());
 
-                Instruction instruction;
-                instruction_type = instruction_decoder.next_instruction_type();
-                switch (instruction_type) {
-                    case CALL_READ:
-                    case CALL_WRITE:
-                    case CALL_LENGTH:
-                    case CALL_STRING:
-                    case ELEM:
-                    case DUP:
-                    case DROP:
-                    case SWAP:
-                    case STI:
-                    case STA:
-                    case RET:
-                    case END: {
-                        instruction_decoder.consume_as<NoArgsInstruction>();
-                        auto inst_type_str = std::string(magic_enum::enum_name(instruction_type));
-                        instruction = {inst_type_str, {}};
-                        break;
-                    }
+        // Сортируем по значению по убыванию
+        std::sort(items.begin(), items.end(),
+            [](const auto& a, const auto& b) {
+                return a.second > b.second; // > для убывания
+            });
+
+        for (auto [seq, count] : items) {
+            for (int i = 0; i < seq.count; i++) {
+                auto inst = seq.elems[i];
+                auto type = static_cast<InstructionType>(inst.tag);
+                std::cout << magic_enum::enum_name(type);
+
+                switch (type) {
                     case JMP:
                     case CJMPz:
                     case CJMPnz:
                     case CONST:
                     case CALL_ARRAY:
+                    case LINE:
                     case ARRAY:
                     case STRING:
-                    case CALLC: {
+                    case CALLC:
+                    case BINOP:
+                    case PATT: {
                         // SimpleInstructionWithArgs<1>
-                        auto inst = instruction_decoder.consume_as<SimpleInstructionWithArgs<1>>();
-                        auto inst_type_str = std::string(magic_enum::enum_name(instruction_type));
-                        instruction = {inst_type_str, std::vector {inst.args[0]}};
+                        std::cout << " " << inst.data.one.a;
                         break;
                     }
                     case CALL:
@@ -172,97 +257,25 @@ class Analyzer {
                     case SEXP:
                     case TAG:
                     case BEGIN:
-                    case CBEGIN: {
-                        // SimpleInstructionWithArgs<2>
-                        auto inst = instruction_decoder.consume_as<SimpleInstructionWithArgs<2>>();
-                        auto inst_type_str = std::string(magic_enum::enum_name(instruction_type));
-                        instruction = {inst_type_str, std::vector {inst.args[0], inst.args[1]}};
-                        break;
-                    }
-                    case BINOP:
-                    case PATT: {
-                        auto inst = instruction_decoder.consume_as<InstructionWithArgsLowerBits<0>>();
-                        auto inst_type_str = std::string(magic_enum::enum_name(instruction_type));
-                        instruction = {inst_type_str, std::vector {static_cast<uint32_t>(inst.get_low_bits())}};
-                        break;
-                    }
+                    case CBEGIN:
+                    case FAIL:
                     case LD:
                     case ST:
                     case LDA: {
-                        // InstructionWithArgsLowerBits<1>
-                        auto inst = instruction_decoder.consume_as<InstructionWithArgsLowerBits<1>>();
-                        auto inst_type_str = std::string(magic_enum::enum_name(instruction_type));
-                        instruction = {inst_type_str, std::vector {static_cast<uint32_t>(inst.get_low_bits()), inst.args[0]}};
-                        break;
-                    }
-                    case LINE: {
-                        // SimpleInstructionWithArgs<1>
-                        instruction_decoder.consume_as<SimpleInstructionWithArgs<1>>();
-                        break;
-                    }
-                    case FAIL: {
-                        instruction_decoder.consume_as<SimpleInstructionWithArgs<2>>();
+                        // SimpleInstructionWithArgs<2>
+                        std::cout << " " << inst.data.two.a;
+                        std::cout << " " << inst.data.two.b;
                         break;
                     }
                     default:
-                        if (*instruction_decoder.code_ptr == static_cast<char>(0xFF)) {
-                            throw std::runtime_error("unreachable code");
-                        }
-                        throw std::runtime_error("invalid instruction type");
+                        break;
                 }
-                if (instruction.instruction_type != "") {
-                    add_instruction(instruction);
+
+                if (i + 1 != seq.count) {
+                    std::cout << "; ";
                 }
             }
-        }
-    }
-
-public:
-
-    const char* code_ptr;
-    InstructionDecoder instruction_decoder;
-
-    explicit Analyzer(const char* code_ptr) : code_ptr(code_ptr), instruction_decoder(InstructionDecoder(code_ptr)) {}
-
-    void analyze() {
-        collect_labels();
-        collect_sequences();
-    }
-
-    void results() {
-        for (const auto& [key, map_sequences_length] : sequences_counter) {
-
-            std::vector<std::pair<std::vector<Instruction>, int>> items(map_sequences_length.begin(), map_sequences_length.end());
-
-            // Сортируем по значению по убыванию
-            std::sort(items.begin(), items.end(),
-                [](const auto& a, const auto& b) {
-                    return a.second > b.second; // > для убывания
-                });
-
-            std::cout << "Parametrized count for length " << key << std::endl;
-            for (auto item : items) {
-
-                for (int i = 0; i < item.first.size(); i++) {
-                    auto instruction = item.first[i];
-                    std::cout << instruction.instruction_type;
-                    if (instruction.instruction_type == "LD" || instruction.instruction_type == "LDA" || instruction.instruction_type == "ST") {
-                        std::cout << " " << magic_enum::enum_name(static_cast<MemVar>(instruction.args[0]))
-                                  << " " << instruction.args[1];
-                    } else if (instruction.instruction_type == "BINOP") {
-                        std::cout << " " << magic_enum::enum_name(static_cast<BinOp>(instruction.args[0]));
-                    } else {
-                        for (auto arg : instruction.args) {
-                            std::cout << " " << arg;
-                        }
-                    }
-                    if (i != item.first.size() - 1) {
-                        std::cout << "; ";
-                    }
-                }
-                std::cout << ": " << item.second << std::endl;
-            }
-            std::cout << std::endl;
+            std::cout << " : " << count << std::endl;
         }
     }
 };
