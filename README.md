@@ -44,7 +44,7 @@ Analyzer is placed in [src/analyzer](src/analyzer).
 
 Running:
 ```
-./lama_sm_interpreter -p Sort.bc
+./lama_sm_interpreter -a Sort.bc
 ```
 
 #### Results (truncated):
