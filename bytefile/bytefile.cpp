@@ -51,6 +51,7 @@ bytefile *read_file(char *fname)
   byte_file->string_ptr = byte_file->buffer + byte_file->public_symbols_number * 2 * sizeof(int);
   byte_file->public_ptr = reinterpret_cast<int *>(byte_file->buffer);
   byte_file->code_ptr = byte_file->string_ptr + byte_file->stringtab_size;
+  byte_file->code_size = fileSize - (reinterpret_cast<long>(byte_file->code_ptr) - reinterpret_cast<long>(&byte_file->stringtab_size));
 
   return byte_file;
 }

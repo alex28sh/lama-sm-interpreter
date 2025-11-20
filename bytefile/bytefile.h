@@ -10,6 +10,7 @@ extern "C" {
 /* The unpacked representation of bytecode file */
 typedef struct
 {
+  int code_size;
   char *string_ptr;          /* A pointer to the beginning of the string table */
   int *public_ptr;           /* A pointer to the beginning of publics table    */
   char *code_ptr;            /* A pointer to the bytecode itself               */
