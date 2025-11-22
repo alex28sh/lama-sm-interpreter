@@ -206,6 +206,7 @@ int main(int argc, char *argv[]) {
     bytefile *bf = read_file(argv[2]);
     if (std::strcmp(argv[1], "-a") == 0) {
         auto analyzer = Analyzer(bf);
+        analyzer.collect_marks();
         analyzer.analyze();
         analyzer.results();
     } else if (std::strcmp(argv[1], "-i") == 0) {

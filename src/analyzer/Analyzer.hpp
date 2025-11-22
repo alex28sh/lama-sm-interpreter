@@ -134,21 +134,18 @@ class Analyzer {
         prev_ptr = cur_ptr;
     }
 
-    std::vector<bool> visited;
+    std::vector<uint8_t> visited;
     std::queue<int> labels;
 
     void check_nxt(uint32_t idx, bool &traverse) {
-
-        if (visited[idx]) {
-
+        if ((visited[idx] & 1) == 1) {
+            // std::cerr << visited.size() << " ";
+            // std::cerr << idx << " ";
+            // std::cerr << visited[idx] << "\n";
             traverse = false;
-
-            // prev_initialized is always true
-            // if not visited will be encountered later
-            collect_pairs.push_back(prev_ptr - bf->code_ptr);
+        } else {
+            visited[idx] |= 1;
         }
-
-        visited[idx] = true;
     }
 
     void process_label(int label) {
@@ -164,7 +161,11 @@ class Analyzer {
 
             // auto instruction_type = get_instruction_type(cur_ptr).first;
             auto [nxt, instruction_type] = general_byterun(cur_ptr - bf->code_ptr);
+            if ((visited[cur_ptr - bf->code_ptr] & 2) != 0) {
+                prev_initialized = false;
+            }
             add_instruction(cur_ptr);
+            std::cerr << magic_enum::enum_name(instruction_type) << "\n";
 
             switch (instruction_type) {
                 case RET:
@@ -179,14 +180,14 @@ class Analyzer {
 
                     if (instruction_type == JMP) {
                         traverse = false;
-                        if (!visited[arg]) {
+                        if ((visited[arg] & 1) == 0) {
                             labels.push(arg);
-                            visited[arg] = true;
+                            visited[arg] |= 1;
                         }
                     } else {
-                        if (!visited[arg]) {
+                        if ((visited[arg] & 1) == 0) {
                             labels.push(arg);
-                            visited[arg] = true;
+                            visited[arg] |= 1;
                         }
                         check_nxt(nxt, traverse);
                     }
@@ -197,9 +198,9 @@ class Analyzer {
                 case FAIL: {
                     auto arg1 = *reinterpret_cast<const uint32_t*>(cur_ptr + 1);
 
-                    if ((instruction_type == CALL || instruction_type == CLOSURE) && !visited[arg1]) {
+                    if ((instruction_type == CALL || instruction_type == CLOSURE) && (visited[arg1] & 1) == 0) {
                         labels.push(arg1);
-                        visited[arg1] = true;
+                        visited[arg1] |= 1;
                         check_nxt(nxt, traverse);
                     } else if (instruction_type == FAIL) {
                         traverse = false;
@@ -218,15 +219,40 @@ class Analyzer {
 
 public:
 
+    void collect_marks() {
+
+        auto cur_ptr = bf->code_ptr;
+        while (true) {
+            if (*cur_ptr == static_cast<char>(0xFF)) {
+                break;
+            }
+
+            auto [nxt, instruction_type] = general_byterun(cur_ptr - bf->code_ptr);
+            switch(instruction_type) {
+                case JMP:
+                case CJMPz:
+                case CJMPnz:
+                case CLOSURE:
+                case CALL: {
+                    auto arg = *reinterpret_cast<const uint32_t*>(cur_ptr + 1);
+                    visited[arg] = 2;
+                    break;
+                }
+            }
+            cur_ptr = bf->code_ptr + nxt;
+        }
+    }
+
     explicit Analyzer(bytefile* bf_) : visited(bf_->code_size, false) {
         bf = bf_;
     }
 
     void analyze() {
+        // std::cerr << "A " << bf->public_symbols_number << std::endl;
         for (int i = 0; i < bf->public_symbols_number; i++) {
             auto symbol_offset = get_public_offset(bf, i);
             labels.push(symbol_offset);
-            visited[symbol_offset] = true;
+            visited[symbol_offset] = 3;
         }
         while (!labels.empty()) {
             auto label = labels.front();
