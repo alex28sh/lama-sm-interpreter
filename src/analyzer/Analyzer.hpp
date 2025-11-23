@@ -137,6 +137,13 @@ class Analyzer {
     std::vector<uint8_t> visited;
     std::queue<int> labels;
 
+    void check_label(uint32_t label) {
+        if ((visited[label] & 1) == 0) {
+            labels.push(label);
+            visited[label] |= 1;
+        }
+    }
+
     void check_nxt(uint32_t idx, bool &traverse) {
         if ((visited[idx] & 1) == 1) {
             // std::cerr << visited.size() << " ";
@@ -165,7 +172,7 @@ class Analyzer {
                 prev_initialized = false;
             }
             add_instruction(cur_ptr);
-            std::cerr << magic_enum::enum_name(instruction_type) << "\n";
+            // std::cerr << magic_enum::enum_name(instruction_type) << "\n";
 
             switch (instruction_type) {
                 case RET:
@@ -178,17 +185,10 @@ class Analyzer {
                 case CJMPnz: {
                     auto arg = *reinterpret_cast<const uint32_t*>(cur_ptr + 1);
 
+                    check_label(arg);
                     if (instruction_type == JMP) {
                         traverse = false;
-                        if ((visited[arg] & 1) == 0) {
-                            labels.push(arg);
-                            visited[arg] |= 1;
-                        }
                     } else {
-                        if ((visited[arg] & 1) == 0) {
-                            labels.push(arg);
-                            visited[arg] |= 1;
-                        }
                         check_nxt(nxt, traverse);
                     }
                     break;
@@ -198,11 +198,10 @@ class Analyzer {
                 case FAIL: {
                     auto arg1 = *reinterpret_cast<const uint32_t*>(cur_ptr + 1);
 
-                    if ((instruction_type == CALL || instruction_type == CLOSURE) && (visited[arg1] & 1) == 0) {
-                        labels.push(arg1);
-                        visited[arg1] |= 1;
+                    if (instruction_type == CALL || instruction_type == CLOSURE) {
+                        check_label(arg1);
                         check_nxt(nxt, traverse);
-                    } else if (instruction_type == FAIL) {
+                    } else {
                         traverse = false;
                     }
                     break;
@@ -251,8 +250,8 @@ public:
         // std::cerr << "A " << bf->public_symbols_number << std::endl;
         for (int i = 0; i < bf->public_symbols_number; i++) {
             auto symbol_offset = get_public_offset(bf, i);
-            labels.push(symbol_offset);
-            visited[symbol_offset] = 3;
+            check_label(symbol_offset);
+            visited[symbol_offset] |= 2;
         }
         while (!labels.empty()) {
             auto label = labels.front();
