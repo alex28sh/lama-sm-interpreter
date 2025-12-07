@@ -220,13 +220,19 @@ public:
 
     void collect_marks() {
 
-        auto cur_ptr = bf->code_ptr;
-        while (true) {
+        std::queue <uint32_t> q;
+        q.push(0);
+        visited[0] = 4;
+
+        while (!q.empty()) {
+            auto idx = q.front();
+            auto cur_ptr = bf->code_ptr + idx;
+            q.pop();
             if (*cur_ptr == static_cast<char>(0xFF)) {
-                break;
+                continue;
             }
 
-            auto [nxt, instruction_type] = general_byterun(cur_ptr - bf->code_ptr);
+            auto [nxt, instruction_type] = general_byterun(idx);
             switch(instruction_type) {
                 case JMP:
                 case CJMPz:
@@ -234,11 +240,25 @@ public:
                 case CLOSURE:
                 case CALL: {
                     auto arg = *reinterpret_cast<const uint32_t*>(cur_ptr + 1);
-                    visited[arg] = 2;
+                    if ((visited[arg] & 2) == 0) {
+                        visited[arg] |= 2;
+                        visited[arg] |= 4;
+                        q.push(arg);
+                    }
+                    if (instruction_type != JMP && ((visited[nxt] & 4) == 0)) {
+                        visited[nxt] |= 4;
+                        q.push(nxt);
+                    }
+                    break;
+                }
+                default: {
+                    if (((visited[nxt] & 4) == 0)) {
+                        visited[nxt] |= 4;
+                        q.push(nxt);
+                    }
                     break;
                 }
             }
-            cur_ptr = bf->code_ptr + nxt;
         }
     }
 
