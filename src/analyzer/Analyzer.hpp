@@ -221,8 +221,13 @@ public:
     void collect_marks() {
 
         std::queue <uint32_t> q;
-        q.push(0);
-        visited[0] = 4;
+        for (int i = 0; i < bf->public_symbols_number; i++) {
+            auto symbol_offset = get_public_offset(bf, i);
+            if ((visited[symbol_offset] & 4) == 0) {
+                q.push(symbol_offset);
+                visited[symbol_offset] |= 4;
+            }
+        }
 
         while (!q.empty()) {
             auto idx = q.front();
