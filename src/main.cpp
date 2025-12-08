@@ -18,6 +18,7 @@
 #include "closures.hpp"
 #include "../runtime/runtime.h"
 #include "printers.hpp"
+#include "Verifier.hpp"
 
 StackMachineState* external_state;
 
@@ -210,6 +211,7 @@ int main(int argc, char *argv[]) {
         analyzer.analyze();
         analyzer.results();
     } else if (std::strcmp(argv[1], "-i") == 0) {
+        verify(bf);
         interpret(bf);
     } else if (std::strcmp(argv[1], "-p") == 0) {
         print_instructions(bf);

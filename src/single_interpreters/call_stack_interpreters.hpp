@@ -8,6 +8,12 @@
 inline void call_stack_begin(const StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<SimpleInstructionWithArgs<2>>();
     auto n_locals = inst.args[1];
+
+    auto max_stack = inst.args[0] >> 16;
+    if (__gc_stack_top + 1 < state.frame_stack->stack_data + max_stack + n_locals) {
+        throw std::runtime_error(fmt::format("Stack overflow at {}", state.instruction_decoder->code_ptr - inst.length()));
+    }
+
     state.frame_stack->reserve_locals(n_locals);
 }
 

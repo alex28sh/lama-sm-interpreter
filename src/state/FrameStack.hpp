@@ -21,70 +21,16 @@ extern "C" {
 
 template<size_t max_stack>
 class FrameStack {
-    uint64_t* stack_data;
 
     std::map <uint32_t, uint32_t> strings_map {};
 
     uint64_t *fp;
 
     int global_size, string_size, string_counter;
-    std::vector<int> local_sizes, arg_sizes, ops_size;
+    std::vector<int> arg_sizes;
 
 public:
-
-    void check_string(const uint32_t index) const {
-        if (string_counter <= index) {
-            throw std::runtime_error(
-                (std::ostringstream{} << "FrameStack: access to a string " << index
-                    << ", that should be less than " << string_counter).str()
-                );
-        }
-    }
-
-    void check_global(const uint32_t index) const {
-        if (global_size <= index) {
-            throw std::runtime_error(
-                (std::ostringstream{} << "FrameStack: access to a global " << index
-                    << ", that should be less than " << global_size).str()
-                );
-        }
-    }
-
-    void check_ops(const uint32_t n) const {
-        if (ops_size.empty()) {
-            throw std::runtime_error("FrameStack: access an op, when number of stack frames is 0");
-        }
-        if (ops_size.back() < n) {
-            throw std::runtime_error(
-                (std::ostringstream{} << "FrameStack: access to an op, when ops stack is empty, or try to pop more ops than exist on op stack "
-                    << n << " " << ops_size.back()).str()
-                );
-        }
-    }
-
-    void check_arg(const uint32_t index) const {
-        if (arg_sizes.empty()) {
-            throw std::runtime_error("FrameStack: access an argument, when number of stack frames is 0");
-        }
-        if (arg_sizes.back() <= index) {
-            throw std::runtime_error(
-                (std::ostringstream{} << "FrameStack: access to an argument " << index
-                    << ", that should be less than " << arg_sizes.back()).str()
-                );
-        }
-    }
-
-    void check_local(const uint32_t index) const {
-        if (local_sizes.empty()) {
-            throw std::runtime_error("FrameStack: access a local, when locals are not reserved (that happens in BEGIN)");
-        }
-        if (local_sizes.back() <= index) {
-            throw std::runtime_error(
-                (std::ostringstream{} << "FrameStack: access to a local " << index
-                    << ", that should be less than " << local_sizes.back()).str()
-                );
-        }
-    }
+    uint64_t* stack_data;
 
     FrameStack(char* string_ptr, int string_area_size, int global_area_size) {
         global_size = global_area_size;
@@ -119,30 +65,22 @@ public:
 
     uint64_t* get_string_ptr(const uint32_t index) {
         const uint32_t assoc_index = strings_map[index];
-        check_string(assoc_index);
         return reinterpret_cast<uint64_t *>(*(__gc_stack_bottom - assoc_index - 1));
     }
 
     [[nodiscard]] uint64_t get_global(const uint32_t index) const {
-        check_global(index);
         return *(__gc_stack_bottom - index - 1 - string_counter);
     }
 
     [[nodiscard]] uint64_t* get_global_link(const uint32_t index) const {
-        check_global(index);
         return (__gc_stack_bottom - index - 1 - string_counter);
     }
 
     void set_global(const uint32_t index, const uint64_t val) const {
-        check_global(index);
         *(__gc_stack_bottom - index - 1 - string_counter) = val;
     }
 
     void push_stack_frame(const uint32_t nargs, const char* ra, const uint32_t isClosure = 0) {
-        if (!ops_size.empty()) {
-            ops_size.back() -= isClosure;
-        }
-        ops_size.push_back(0);
         arg_sizes.push_back(nargs);
 
         if (nargs > 1) std::reverse(__gc_stack_top + 1, __gc_stack_top + nargs + 1);
@@ -156,18 +94,7 @@ public:
     }
 
     const char* pop_stack_frame() {
-        if (arg_sizes.empty() || ops_size.empty() || local_sizes.empty()) {
-            throw std::runtime_error("Exiting wrongly initialized block with the END instruction");
-        }
-        if (ops_size.back() != 1) {
-            throw std::runtime_error((std::ostringstream{} << "When exiting ops stack size should be 1, but instead it " << ops_size.back()).str());
-        }
-        ops_size.pop_back();
-        if (!ops_size.empty()) {
-            ops_size.back() -= arg_sizes.back();
-        }
         arg_sizes.pop_back();
-        local_sizes.pop_back();
 
         uint64_t* prev_fp = fp;
         fp = reinterpret_cast<uint64_t*>(*(prev_fp + 2));
@@ -177,7 +104,6 @@ public:
     }
 
     void reserve_locals(const uint32_t n_locals) {
-        local_sizes.push_back(n_locals);
         __gc_stack_top -= n_locals;
     }
 
@@ -199,73 +125,56 @@ public:
     }
 
     [[nodiscard]] uint64_t get_arg(const uint32_t index) const {
-        check_arg(index);
         return *(fp + 4 + index);
     }
 
     [[nodiscard]] uint64_t* get_arg_link(const uint32_t index) const {
-        check_arg(index);
         return (fp + 4 + index);
     }
 
     void set_arg(const uint32_t index, const uint64_t value) const {
-        check_arg(index);
         *(fp + 4 + index) = value;
     }
 
     [[nodiscard]] uint64_t get_local(const uint32_t index) const {
-        check_local(index);
         return *(fp - index);
     }
 
     [[nodiscard]] uint64_t* get_local_link(const uint32_t index) const {
-        check_local(index);
         return (fp - index);
     }
 
     void set_local(const uint32_t index, const uint64_t value) const {
-        check_local(index);
         *(fp - index) = value;
     }
 
     void push_op_link(uint64_t* ptr) {
-        check_ops(0);
-        ops_size.back()++;
         *__gc_stack_top = reinterpret_cast<uint64_t>(ptr);
         __gc_stack_top--;
     }
 
     void push_op(const uint64_t value) {
-        check_ops(0);
-        ops_size.back()++;
         *__gc_stack_top = value;
         __gc_stack_top--;
     }
 
     uint64_t peek_op() const {
-        check_ops(1);
         return *(__gc_stack_top + 1);
     }
 
     uint64_t* peek_op_ptr() const {
-        check_ops(1);
         return (__gc_stack_top + 1);
     }
 
     uint64_t peek_op(const uint32_t index) const {
-        check_ops(index);
         return *(__gc_stack_top + index);
     }
 
     void pop_op() {
-        check_ops(1);
-        ops_size.back()--;
         __gc_stack_top++;
     }
 
     void pop_ops(const uint32_t n) {
-        check_ops(n);
-        ops_size.back() -= n;
         __gc_stack_top += n;
     }
 
