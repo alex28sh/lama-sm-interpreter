@@ -11,7 +11,7 @@ inline void call_stack_begin(const StackMachineState& state) {
 
     auto max_stack = inst.args[0] >> 16;
     if (__gc_stack_top + 1 < state.frame_stack->stack_data + max_stack + n_locals) {
-        throw std::runtime_error(fmt::format("Stack overflow at {}", state.instruction_decoder->code_ptr - inst.length()));
+        throw std::runtime_error((std::ostringstream{} <<"Stack overflow at {}" << (state.instruction_decoder->code_ptr - inst.length())).str());
     }
 
     state.frame_stack->reserve_locals(n_locals);

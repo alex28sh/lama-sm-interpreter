@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Analyzer.hpp"
+#include <sstream>
 
 uint32_t get_new_stack(uint32_t cur_stack, uint32_t symbol_offset, InstructionType instruction_type) {
     switch (instruction_type) {
@@ -124,18 +125,24 @@ void collect_marks(bytefile *bf, std::vector<int32_t> &visited) {
             if (instruction_type == CALLC || instruction_type == ARRAY) {
                 auto arg_num = *reinterpret_cast<const uint32_t*>(bf->code_ptr + symbol_offset + 1);
                 if (arg_num > cur_stack) {
-                    throw std::runtime_error(fmt::format("argument number of instruction at offset {} is too large", symbol_offset));
+                    std::ostringstream oss; 
+                    oss << "argument number of instruction at offset " << symbol_offset << " is too large"; 
+                    throw std::runtime_error(oss.str());
                 }
             } else if (instruction_type == SEXP || instruction_type == CALL) {
                 auto arg_num = *reinterpret_cast<const uint32_t*>(bf->code_ptr + symbol_offset + 1 + sizeof(uint32_t));
                 if (arg_num > cur_stack) {
-                    throw std::runtime_error(fmt::format("argument number of instruction at offset {} is too large", symbol_offset));
+                    std::ostringstream oss; 
+                    oss << "argument number of instruction at offset " << symbol_offset << " is too large"; 
+                    throw std::runtime_error(oss.str());
                 }
             }
 
             auto new_stack = get_new_stack(cur_stack, symbol_offset, instruction_type);
             if (new_stack < 0) {
-                throw std::runtime_error(fmt::format("Stack is exhausted at {}", symbol_offset));
+                std::ostringstream oss; 
+                oss << "Stack is exhausted at " << symbol_offset; 
+                throw std::runtime_error(oss.str());
             }
 
             auto perform_step = [&](const uint32_t nxt_offset) {
@@ -143,7 +150,9 @@ void collect_marks(bytefile *bf, std::vector<int32_t> &visited) {
                     visited[new_stack] = cur_stack;
                     labels.push(new_stack);
                 } else if (visited[nxt_offset] != cur_stack) {
-                    throw std::runtime_error(fmt::format("Stack at {} differs", nxt_offset));
+                    std::ostringstream oss; 
+                    oss << "Stack at " << nxt_offset << " differs"; 
+                    throw std::runtime_error(oss.str());
                 }
             };
 
@@ -166,7 +175,9 @@ void collect_marks(bytefile *bf, std::vector<int32_t> &visited) {
                 visited[nxt] = cur_stack;
                 symbol_offset = nxt;
             } else if (visited[nxt] != cur_stack) {
-                throw std::runtime_error(fmt::format("Stack at {} differs", nxt));
+                std::ostringstream oss; 
+                oss << "Stack at " << nxt << " differs"; 
+                throw std::runtime_error(oss.str());
             } else {
                 break;
             }
@@ -184,23 +195,33 @@ void validate_variable(
     switch (designation) {
         case Global:
             if (index >= bf->global_area_size) {
-                throw std::runtime_error(fmt::format("Global variable {} out of bounds", index));
+                std::ostringstream oss; 
+                oss << "Global variable " << index << " out of bounds"; 
+                throw std::runtime_error(oss.str());
             }
             break;
         case Local:
             if (index >= locals) {
-                throw std::runtime_error(fmt::format("Local variable {} out of bounds", index));
+                std::ostringstream oss; 
+                oss << "Local variable " << index << " out of bounds"; 
+                throw std::runtime_error(oss.str());
             }
             break;
         case Argument:
             if (index >= args) {
-                throw std::runtime_error(fmt::format("Argument {} out of bounds", index));
+                std::ostringstream oss; 
+                oss << "Argument " << index << " out of bounds"; 
+                throw std::runtime_error(oss.str());
             }
             break;
         case Closure:
             break;
         default:
-            throw std::runtime_error(fmt::format("Unknown designation {}", char(designation)));
+            {
+                std::ostringstream oss; 
+                oss << "Unknown designation " << char(designation); 
+                throw std::runtime_error(oss.str());
+            }
     }
 }
 
@@ -225,7 +246,9 @@ void verify(bytefile *bf) {
 
             auto begin_offset = begin_offsets.back() + 1;
             if (reinterpret_cast<uint16_t *>(bf->code_ptr + begin_offset)[1] != 0) {
-                throw std::runtime_error(fmt::format("Could not encode max_stack: too many arguments at the basic block {}", symbol_offset));
+                std::ostringstream oss; 
+                oss << "Could not encode max_stack: too many arguments at the basic block " << symbol_offset; 
+                throw std::runtime_error(oss.str());
             }
             reinterpret_cast<uint16_t *>(bf->code_ptr + begin_offset)[1] = max_stack;
 
@@ -260,7 +283,9 @@ void verify(bytefile *bf) {
             instruction_type == CJMPz || instruction_type == CJMPnz) {
             auto jump = *reinterpret_cast<const uint32_t*>(bf->code_ptr + symbol_offset + 1);
             if (jump >= bf->code_size) {
-                throw std::runtime_error(fmt::format("Jump at {} outside of code section {}", jump, bf->code_size));
+                std::ostringstream oss; 
+                oss << "Jump at " << jump << " outside of code section " << bf->code_size; 
+                throw std::runtime_error(oss.str());
             }
         }
         symbol_offset = nxt;
