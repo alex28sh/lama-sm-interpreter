@@ -214,6 +214,6 @@ int main(int argc, char *argv[]) {
     } else if (std::strcmp(argv[1], "-p") == 0) {
         print_instructions(bf);
     } else {
-        throw std::runtime_error(fmt::format("wrong argument {}", argv[1]));
+        throw std::runtime_error((std::ostringstream{} << "wrong argument " << argv[1]).str());
     }
 }

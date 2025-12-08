@@ -131,7 +131,6 @@ inline void print_instructions(bytefile *bf) {
                 std::cout << magic_enum::enum_name(instruction_type) << " ";
                 std::cout << magic_enum::enum_name(low_bits_inst) << std::endl;
                 break;
-                // throw std::runtime_error(fmt::format("not implemented {}", magic_enum::enum_name(instruction_type)));
             }
             default:
                 if (*instruction_decoder.code_ptr == static_cast<char>(0xFF)) {

@@ -4,7 +4,6 @@
 
 #pragma once
 #include <algorithm>
-#include <fmt/core.h>
 #include <map>
 
 #include "boxing.hpp"
@@ -36,9 +35,8 @@ public:
     void check_string(const uint32_t index) const {
         if (string_counter <= index) {
             throw std::runtime_error(
-                fmt::format(
-                    "FrameStack: access to a string {}, that should be less than {}", index, string_counter
-                    )
+                (std::ostringstream{} << "FrameStack: access to a string " << index
+                    << ", that should be less than " << string_counter).str()
                 );
         }
     }
@@ -46,9 +44,8 @@ public:
     void check_global(const uint32_t index) const {
         if (global_size <= index) {
             throw std::runtime_error(
-                fmt::format(
-                    "FrameStack: access to a global {}, that should be less than {}", index, global_size
-                    )
+                (std::ostringstream{} << "FrameStack: access to a global " << index
+                    << ", that should be less than " << global_size).str()
                 );
         }
     }
@@ -59,9 +56,8 @@ public:
         }
         if (ops_size.back() < n) {
             throw std::runtime_error(
-                fmt::format(
-                    "FrameStack: access to an op, when ops stack is empty, or try to pop more ops than exist on op stack {} {}", n, ops_size.back()
-                    )
+                (std::ostringstream{} << "FrameStack: access to an op, when ops stack is empty, or try to pop more ops than exist on op stack "
+                    << n << " " << ops_size.back()).str()
                 );
         }
     }
@@ -72,9 +68,8 @@ public:
         }
         if (arg_sizes.back() <= index) {
             throw std::runtime_error(
-                fmt::format(
-                    "FrameStack: access to an argument {}, that should be less than {}", index, arg_sizes.back()
-                    )
+                (std::ostringstream{} << "FrameStack: access to an argument " << index
+                    << ", that should be less than " << arg_sizes.back()).str()
                 );
         }
     }
@@ -85,9 +80,8 @@ public:
         }
         if (local_sizes.back() <= index) {
             throw std::runtime_error(
-                fmt::format(
-                    "FrameStack: access to a local %d, that should be less than < %d", index, local_sizes.back()
-                    )
+                (std::ostringstream{} << "FrameStack: access to a local " << index
+                    << ", that should be less than " << local_sizes.back()).str()
                 );
         }
     }
@@ -166,7 +160,7 @@ public:
             throw std::runtime_error("Exiting wrongly initialized block with the END instruction");
         }
         if (ops_size.back() != 1) {
-            throw std::runtime_error(fmt::format("When exiting ops stack size should be 1, but instead it {}", ops_size.back()));
+            throw std::runtime_error((std::ostringstream{} << "When exiting ops stack size should be 1, but instead it " << ops_size.back()).str());
         }
         ops_size.pop_back();
         if (!ops_size.empty()) {

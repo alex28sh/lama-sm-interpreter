@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.30)
 project(lama_sm_interpreter)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 #add_definitions(-DLAMA_ENV)
 include(FetchContent)
@@ -13,17 +15,9 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(magic_enum)
 
-include(FetchContent)
-FetchContent_Declare(
-        fmt
-        GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-        GIT_TAG 10.1.1
-)
-FetchContent_MakeAvailable(fmt)
-
 add_executable(lama_sm_interpreter src/main.cpp runtime/custom_data.c bytefile/bytefile.cpp src/printers.hpp)
 
-target_link_libraries(lama_sm_interpreter ${CMAKE_SOURCE_DIR}/runtime/runtime.a magic_enum::magic_enum fmt::fmt)
+target_link_libraries(lama_sm_interpreter PRIVATE magic_enum::magic_enum ${CMAKE_SOURCE_DIR}/runtime/runtime.a)
 target_include_directories(lama_sm_interpreter PRIVATE
         ${CMAKE_SOURCE_DIR}/src/analyzer
         ${CMAKE_SOURCE_DIR}/src/decoders
@@ -38,7 +32,6 @@ target_compile_options(lama_sm_interpreter PRIVATE
         -fno-omit-frame-pointer
         -fno-optimize-sibling-calls
         -fstack-protector-all
-        -Ofast
         -fno-inline -fno-inline-functions -fno-inline-small-functions
         #        -Wno-pointer-to-int-cast
 #        -Wno-writable-strings

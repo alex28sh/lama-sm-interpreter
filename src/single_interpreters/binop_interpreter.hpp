@@ -34,7 +34,7 @@ inline void boxed_unboxed(const StackMachineState& state, const std::function<in
     auto a = unbox(state.frame_stack->peek_op());
     state.frame_stack->pop_op();
     if ((bin_op == DIV || bin_op == MOD) && b == 0) {
-        throw std::runtime_error(fmt::format("Second argument of {} is zero", magic_enum::enum_name(bin_op)));
+        throw std::runtime_error((std::ostringstream{} << "Second argument of " << magic_enum::enum_name(bin_op) << " is zero").str());
     }
     auto res = op(a, b);
     state.frame_stack->push_op(box_int(res));
@@ -89,6 +89,6 @@ inline void binop_interpeter(const StackMachineState& state) {
             boxed_unboxed(state, BinOpMap.at(static_cast<BinOp>(low_bits_inst)), low_bits_inst);
             break;
         default:
-            throw std::runtime_error(fmt::format("Unknown binop {}", magic_enum::enum_name(low_bits_inst)));
+            throw std::runtime_error((std::ostringstream{} << "Unknown binop " << magic_enum::enum_name(low_bits_inst)).str());
     }
 }
