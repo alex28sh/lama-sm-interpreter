@@ -32,7 +32,7 @@ target_compile_options(lama_sm_interpreter PRIVATE
         -fno-omit-frame-pointer
         -fno-optimize-sibling-calls
         -fstack-protector-all
-        -fno-inline -fno-inline-functions -fno-inline-small-functions
+        -fno-inline -fno-inline-functions
         #        -Wno-pointer-to-int-cast
-#        -Wno-writable-strings
+        -Wno-writable-strings
 )
