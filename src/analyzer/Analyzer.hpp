@@ -225,6 +225,7 @@ public:
             auto symbol_offset = get_public_offset(bf, i);
             if ((visited[symbol_offset] & 4) == 0) {
                 q.push(symbol_offset);
+                visited[symbol_offset] |= 2;
                 visited[symbol_offset] |= 4;
             }
         }
@@ -251,6 +252,7 @@ public:
                         q.push(arg);
                     }
                     if (instruction_type != JMP && ((visited[nxt] & 4) == 0)) {
+                        visited[nxt] |= 2;
                         visited[nxt] |= 4;
                         q.push(nxt);
                     }
