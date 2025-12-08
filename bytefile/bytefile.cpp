@@ -39,7 +39,8 @@ bytefile *read_file(char *fname)
   file.seekg(0, std::ios::beg);
   if (file.fail()) failure("%s\n", strerror(errno));
 
-  auto byte_file_memory = reinterpret_cast<char *>(malloc(static_cast<size_t>(sizeof(void *) * 4 + fileSize)));
+  auto byte_file_memory = reinterpret_cast<char*>(
+      malloc(static_cast<size_t>(sizeof(bytefile) + fileSize)));
   if (byte_file_memory == nullptr) failure("*** FAILURE: unable to allocate memory.\n");
 
   auto byte_file = reinterpret_cast<bytefile *>(byte_file_memory);
