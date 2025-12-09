@@ -37,7 +37,7 @@ InstructionType get_instruction_type(char* ptr) {
     return instruction_type;
 }
 
-std::pair<uint32_t, InstructionType> general_byterun(uint32_t i) {
+std::pair<uint32_t, InstructionType> general_byterun(bytefile* bf, uint32_t i) {
     auto p = bf->code_ptr + i;
     auto type = get_instruction_type(p);
 
@@ -71,8 +71,11 @@ std::pair<uint32_t, InstructionType> general_byterun(uint32_t i) {
         case LINE: {
             return std::make_pair(i + 1 + sizeof(uint32_t), type);
         }
+        case CLOSURE: {
+            auto n_args = *reinterpret_cast<uint32_t*>(p + 1 + sizeof(uint32_t));
+            return std::make_pair(i + 1 + 2 * sizeof(uint32_t) + (1 + sizeof(uint32_t)) * n_args, type);
+        }
         case CALL:
-        case CLOSURE:
         case SEXP:
         case TAG:
         case BEGIN:
@@ -96,16 +99,16 @@ int compare_bytes(int st1, int end1, int st2, int end2) {
 }
 
 bool cmp_single(uint32_t i1, uint32_t i2) {
-    auto [nxt1, type1] = general_byterun(i1);
-    auto [nxt2, type2] = general_byterun(i2);
+    auto [nxt1, type1] = general_byterun(bf, i1);
+    auto [nxt2, type2] = general_byterun(bf, i2);
 
     return compare_bytes(i1, nxt1, i2, nxt2) < 0;
 }
 
 bool cmp_pair(uint32_t i1, uint32_t i2) {
 
-    auto nxt1 = general_byterun(i1).first;
-    auto nxt2 = general_byterun(i2).first;
+    auto nxt1 = general_byterun(bf, i1).first;
+    auto nxt2 = general_byterun(bf, i2).first;
 
     auto cmp1 = compare_bytes(i1, nxt1, i2, nxt2);
     if (cmp1 == 0) {
@@ -167,7 +170,7 @@ class Analyzer {
         while (traverse) {
 
             // auto instruction_type = get_instruction_type(cur_ptr).first;
-            auto [nxt, instruction_type] = general_byterun(cur_ptr - bf->code_ptr);
+            auto [nxt, instruction_type] = general_byterun(bf, cur_ptr - bf->code_ptr);
             if ((visited[cur_ptr - bf->code_ptr] & 2) != 0) {
                 prev_initialized = false;
             }
@@ -238,7 +241,7 @@ public:
                 continue;
             }
 
-            auto [nxt, instruction_type] = general_byterun(idx);
+            auto [nxt, instruction_type] = general_byterun(bf, idx);
             switch(instruction_type) {
                 case JMP:
                 case CJMPz:
@@ -321,7 +324,7 @@ public:
     void print_instruction(char* &ptr) {
 
         auto raw_instruction_type = static_cast<InstructionType>(*ptr);
-        auto [nxt, instruction_type] = general_byterun(ptr - bf->code_ptr);
+        auto [nxt, instruction_type] = general_byterun(bf, ptr - bf->code_ptr);
         std::cout << magic_enum::enum_name(instruction_type);
 
         ptr++;

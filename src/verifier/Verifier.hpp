@@ -3,7 +3,7 @@
 #include "Analyzer.hpp"
 #include <sstream>
 
-uint32_t get_new_stack(uint32_t cur_stack, uint32_t symbol_offset, InstructionType instruction_type) {
+uint32_t get_new_stack(bytefile* bf, uint32_t cur_stack, uint32_t symbol_offset, InstructionType instruction_type) {
     switch (instruction_type) {
         case BINOP:
             return cur_stack - 1;
@@ -16,27 +16,22 @@ uint32_t get_new_stack(uint32_t cur_stack, uint32_t symbol_offset, InstructionTy
         case JMP:
             return cur_stack;
         case CJMPz:
-            return cur_stack - 1;
         case CJMPnz:
-            return cur_stack - 1;
         case DROP:
             return cur_stack - 1;
         case DUP:
+        case LD:
             return cur_stack + 1;
-        case LD: {
-            return cur_stack + 1;
-        }
-        case ST: {
-            return cur_stack - 1;
-        }
+        case ST:
+            return cur_stack;
         case CALL_READ:
             return cur_stack + 1;
         case CALL_WRITE:
-            return cur_stack - 1;
+            return cur_stack;
         case CALL_LENGTH:
             return cur_stack;
         case CALL_STRING:
-            return cur_stack;
+            return cur_stack + 1;
         case CALL_ARRAY: {
             auto arg_num = *reinterpret_cast<const uint32_t*>(bf->code_ptr + symbol_offset + 1);
             return cur_stack + 1 - arg_num;
@@ -46,7 +41,7 @@ uint32_t get_new_stack(uint32_t cur_stack, uint32_t symbol_offset, InstructionTy
             return cur_stack;
         }
         case CALL: {
-            auto arg_num = *reinterpret_cast<const uint32_t*>(bf->code_ptr + symbol_offset + 1);
+            auto arg_num = *reinterpret_cast<const uint32_t*>(bf->code_ptr + symbol_offset + 1 + sizeof(uint32_t));
             return cur_stack + 1 - arg_num;
         }
         case END:
@@ -55,10 +50,8 @@ uint32_t get_new_stack(uint32_t cur_stack, uint32_t symbol_offset, InstructionTy
             return cur_stack - 1;
         case TAG:
             return cur_stack;
-        case ARRAY: {
-            auto arg_num = *reinterpret_cast<const uint32_t*>(bf->code_ptr + symbol_offset + 1);
-            return cur_stack + 1 - arg_num;
-        }
+        case ARRAY:
+            return cur_stack;
         case FAIL:
             return cur_stack;
         case LINE:
@@ -80,7 +73,9 @@ uint32_t get_new_stack(uint32_t cur_stack, uint32_t symbol_offset, InstructionTy
             return cur_stack - arg_num;
         }
         case PATT: {
-            auto low_bits_inst = static_cast<Patt>(low_bits(instruction_type));
+            auto raw_instruction_type = static_cast<InstructionType>(*(bf->code_ptr + symbol_offset));
+
+            auto low_bits_inst = static_cast<Patt>(low_bits(raw_instruction_type));
 
             switch(low_bits_inst) {
                 case PattStrCmp:
@@ -121,7 +116,7 @@ void collect_marks(bytefile *bf, std::vector<int32_t> &visited) {
         auto cur_stack = visited[symbol_offset];
 
         while (true) {
-            auto [nxt, instruction_type] = general_byterun(symbol_offset);
+            auto [nxt, instruction_type] = general_byterun(bf, symbol_offset);
             if (instruction_type == CALLC || instruction_type == ARRAY) {
                 auto arg_num = *reinterpret_cast<const uint32_t*>(bf->code_ptr + symbol_offset + 1);
                 if (arg_num > cur_stack) {
@@ -138,33 +133,39 @@ void collect_marks(bytefile *bf, std::vector<int32_t> &visited) {
                 }
             }
 
-            auto new_stack = get_new_stack(cur_stack, symbol_offset, instruction_type);
-            if (new_stack < 0) {
+            cur_stack = get_new_stack(bf, cur_stack, symbol_offset, instruction_type);
+            if (cur_stack < 0) {
                 std::ostringstream oss; 
                 oss << "Stack is exhausted at " << symbol_offset; 
                 throw std::runtime_error(oss.str());
             }
 
-            auto perform_step = [&](const uint32_t nxt_offset) {
+            auto perform_step = [&](const uint32_t nxt_offset, const uint32_t stack) {
                 if (visited[nxt_offset] == -1) {
-                    visited[new_stack] = cur_stack;
-                    labels.push(new_stack);
-                } else if (visited[nxt_offset] != cur_stack) {
+                    visited[nxt_offset] = stack;
+                    labels.push(nxt_offset);
+                } else if (visited[nxt_offset] != stack) {
                     std::ostringstream oss; 
                     oss << "Stack at " << nxt_offset << " differs"; 
                     throw std::runtime_error(oss.str());
                 }
             };
 
-            if (instruction_type == CJMPz || instruction_type == CJMPnz || instruction_type == CALL) {
+            if (instruction_type == CJMPz || instruction_type == CJMPnz) {
                 auto label_arg = *reinterpret_cast<const uint32_t*>(bf->code_ptr + symbol_offset + 1);
-                perform_step(label_arg);
-                perform_step(nxt);
+                perform_step(label_arg, cur_stack);
+                perform_step(nxt, cur_stack);
+                break;
+            }
+            if (instruction_type == CALL) {
+                auto label_arg = *reinterpret_cast<const uint32_t*>(bf->code_ptr + symbol_offset + 1);
+                perform_step(label_arg, 0);
+                perform_step(nxt, cur_stack);
                 break;
             }
             if (instruction_type == JMP) {
                 auto label_arg = *reinterpret_cast<const uint32_t*>(bf->code_ptr + symbol_offset + 1);
-                perform_step(label_arg);
+                perform_step(label_arg, cur_stack);
                 break;
             }
 
@@ -196,7 +197,7 @@ void validate_variable(
         case Global:
             if (index >= bf->global_area_size) {
                 std::ostringstream oss; 
-                oss << "Global variable " << index << " out of bounds"; 
+                oss << "Global variable " << index << " out of bounds " << bf->global_area_size;
                 throw std::runtime_error(oss.str());
             }
             break;
@@ -226,7 +227,7 @@ void validate_variable(
 }
 
 void verify(bytefile *bf) {
-    std::vector<int32_t> visited(bf->code_size);
+    std::vector visited(bf->code_size, -1);
     collect_marks(bf, visited);
 
     uint32_t symbol_offset = 0;
@@ -235,7 +236,13 @@ void verify(bytefile *bf) {
     std::vector<uint32_t> local_sizes, arg_sizes, begin_offsets;
 
     while (symbol_offset < bf->code_size) {
-        auto [nxt, instruction_type] = general_byterun(symbol_offset);
+
+        auto code_ptr = bf->code_ptr + symbol_offset;
+        if (*code_ptr == static_cast<char>(0xFF)) {
+            break;
+        }
+
+        auto [nxt, instruction_type] = general_byterun(bf, symbol_offset);
         if (visited[symbol_offset] == -1) {
             symbol_offset = nxt;
             continue;
@@ -246,8 +253,8 @@ void verify(bytefile *bf) {
 
             auto begin_offset = begin_offsets.back() + 1;
             if (reinterpret_cast<uint16_t *>(bf->code_ptr + begin_offset)[1] != 0) {
-                std::ostringstream oss; 
-                oss << "Could not encode max_stack: too many arguments at the basic block " << symbol_offset; 
+                std::ostringstream oss;
+                oss << "Could not encode max_stack: too many arguments at the basic block " << symbol_offset;
                 throw std::runtime_error(oss.str());
             }
             reinterpret_cast<uint16_t *>(bf->code_ptr + begin_offset)[1] = max_stack;
@@ -264,7 +271,8 @@ void verify(bytefile *bf) {
             begin_offsets.push_back(symbol_offset);
         } else if (instruction_type == LD || instruction_type == ST || instruction_type == LDA) {
             auto arg = *reinterpret_cast<const uint32_t*>(bf->code_ptr + symbol_offset + 1);
-            validate_variable(bf, static_cast<MemVar>(low_bits(instruction_type)), arg, arg_sizes.back(), local_sizes.back());
+            auto raw_instruction_type = static_cast<InstructionType>(*(bf->code_ptr + symbol_offset));
+            validate_variable(bf, static_cast<MemVar>(low_bits(raw_instruction_type)), arg, arg_sizes.back(), local_sizes.back());
         } else if (instruction_type == CLOSURE) {
 
             auto ptr =bf->code_ptr + symbol_offset + 1 + sizeof(uint32_t);
@@ -283,8 +291,8 @@ void verify(bytefile *bf) {
             instruction_type == CJMPz || instruction_type == CJMPnz) {
             auto jump = *reinterpret_cast<const uint32_t*>(bf->code_ptr + symbol_offset + 1);
             if (jump >= bf->code_size) {
-                std::ostringstream oss; 
-                oss << "Jump at " << jump << " outside of code section " << bf->code_size; 
+                std::ostringstream oss;
+                oss << "Jump at " << jump << " outside of code section " << bf->code_size;
                 throw std::runtime_error(oss.str());
             }
         }
