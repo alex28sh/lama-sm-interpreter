@@ -4,7 +4,7 @@
 #include <sstream>
 
 uint32_t get_new_stack(
-    const bytefile* &bf,
+    bytefile* &bf,
     const uint32_t &cur_stack,
     const uint32_t &symbol_offset,
     const InstructionType &instruction_type
@@ -102,7 +102,7 @@ uint32_t get_new_stack(
     }
 }
 
-void collect_marks(const bytefile* &bf, std::vector<int32_t> &visited) {
+void collect_marks(bytefile* &bf, std::vector<int32_t> &visited) {
     std::queue<uint32_t> labels;
     for (int i = 0; i < bf->public_symbols_number; i++) {
         auto symbol_offset = get_public_offset(bf, i);
@@ -192,7 +192,7 @@ void collect_marks(const bytefile* &bf, std::vector<int32_t> &visited) {
 }
 
 void validate_variable(
-    const bytefile* &bf,
+    bytefile* &bf,
     const MemVar &designation,
     const uint32_t &index,
     const uint32_t &args,
