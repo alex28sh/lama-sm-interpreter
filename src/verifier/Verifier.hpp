@@ -233,7 +233,7 @@ void verify(bytefile *bf) {
     uint32_t symbol_offset = 0;
     int32_t max_stack = 0;
 
-    std::vector<uint32_t> local_sizes, arg_sizes, begin_offsets;
+    std::vector<uint32_t> begin_offsets;
 
     while (symbol_offset < bf->code_size) {
 
@@ -260,31 +260,32 @@ void verify(bytefile *bf) {
             reinterpret_cast<uint16_t *>(bf->code_ptr + begin_offset)[1] = max_stack;
 
             begin_offsets.pop_back();
-            local_sizes.pop_back();
-            arg_sizes.pop_back();
             max_stack = -1;
         } else if (instruction_type == BEGIN || instruction_type == CBEGIN) {
-            auto n_args = *reinterpret_cast<const uint32_t*>(bf->code_ptr + symbol_offset + 1);
-            auto n_locals = *reinterpret_cast<const uint32_t*>(bf->code_ptr + symbol_offset + 1 + sizeof(uint32_t));
-            local_sizes.push_back(n_locals);
-            arg_sizes.push_back(n_args);
             begin_offsets.push_back(symbol_offset);
         } else if (instruction_type == LD || instruction_type == ST || instruction_type == LDA) {
+            auto begin_offset = begin_offsets.back() + 1;
+            auto n_args = *reinterpret_cast<const uint32_t*>(bf->code_ptr + begin_offset);
+            auto n_locals = *reinterpret_cast<const uint32_t*>(bf->code_ptr + begin_offset + sizeof(uint32_t));
+
             auto arg = *reinterpret_cast<const uint32_t*>(bf->code_ptr + symbol_offset + 1);
             auto raw_instruction_type = static_cast<InstructionType>(*(bf->code_ptr + symbol_offset));
-            validate_variable(bf, static_cast<MemVar>(low_bits(raw_instruction_type)), arg, arg_sizes.back(), local_sizes.back());
+            validate_variable(bf, static_cast<MemVar>(low_bits(raw_instruction_type)), arg, n_args, n_locals);
         } else if (instruction_type == CLOSURE) {
+            auto begin_offset = begin_offsets.back() + 1;
+            auto n_args = *reinterpret_cast<const uint32_t*>(bf->code_ptr + begin_offset);
+            auto n_locals = *reinterpret_cast<const uint32_t*>(bf->code_ptr + begin_offset + sizeof(uint32_t));
 
             auto ptr =bf->code_ptr + symbol_offset + 1 + sizeof(uint32_t);
-            auto n_args = *reinterpret_cast<const uint32_t*>(ptr);
+            auto n_args_closure = *reinterpret_cast<const uint32_t*>(ptr);
             ptr += sizeof(uint32_t);
 
             Designations designations = {};
 
-            for (uint32_t i = 0; i < n_args; i++) {
+            for (uint32_t i = 0; i < n_args_closure; i++) {
                 auto designation = reinterpret_cast<const Designation *>(ptr);
                 ptr += designation->length();
-                validate_variable(bf, designation->mem_var, designation->value, arg_sizes.back(), local_sizes.back());
+                validate_variable(bf, designation->mem_var, designation->value, n_args, n_locals);
             }
 
         } else if (instruction_type == CALL || instruction_type == JMP ||
