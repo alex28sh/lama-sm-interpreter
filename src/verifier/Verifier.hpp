@@ -3,7 +3,12 @@
 #include "Analyzer.hpp"
 #include <sstream>
 
-uint32_t get_new_stack(bytefile* bf, uint32_t cur_stack, uint32_t symbol_offset, InstructionType instruction_type) {
+uint32_t get_new_stack(
+    const bytefile* &bf,
+    const uint32_t &cur_stack,
+    const uint32_t &symbol_offset,
+    const InstructionType &instruction_type
+) {
     switch (instruction_type) {
         case BINOP:
             return cur_stack - 1;
@@ -97,7 +102,7 @@ uint32_t get_new_stack(bytefile* bf, uint32_t cur_stack, uint32_t symbol_offset,
     }
 }
 
-void collect_marks(bytefile *bf, std::vector<int32_t> &visited) {
+void collect_marks(const bytefile* &bf, std::vector<int32_t> &visited) {
     std::queue<uint32_t> labels;
     for (int i = 0; i < bf->public_symbols_number; i++) {
         auto symbol_offset = get_public_offset(bf, i);
@@ -187,11 +192,11 @@ void collect_marks(bytefile *bf, std::vector<int32_t> &visited) {
 }
 
 void validate_variable(
-    bytefile *bf,
-    MemVar designation,
-    uint32_t index,
-    uint32_t args,
-    uint32_t locals
+    const bytefile* &bf,
+    const MemVar &designation,
+    const uint32_t &index,
+    const uint32_t &args,
+    const uint32_t &locals
 ) {
     switch (designation) {
         case Global:
@@ -279,8 +284,6 @@ void verify(bytefile *bf) {
             auto ptr =bf->code_ptr + symbol_offset + 1 + sizeof(uint32_t);
             auto n_args_closure = *reinterpret_cast<const uint32_t*>(ptr);
             ptr += sizeof(uint32_t);
-
-            Designations designations = {};
 
             for (uint32_t i = 0; i < n_args_closure; i++) {
                 auto designation = reinterpret_cast<const Designation *>(ptr);
