@@ -17,16 +17,17 @@ inline void call_stack_begin(const StackMachineState& state) {
     state.frame_stack->reserve_locals(n_locals);
 }
 
-inline void call_stack_end(const StackMachineState& state) {
+inline bool call_stack_end(const StackMachineState& state) {
     state.instruction_decoder->consume_as<NoArgsInstruction>();
 
     auto val = state.frame_stack->peek_op();
     auto code_ptr = state.frame_stack->pop_stack_frame();
     if (code_ptr == nullptr) {
-        exit(0);
+        return true;
     }
     state.instruction_decoder->code_ptr = code_ptr;
     state.frame_stack->push_op(val);
+    return false;
 }
 
 inline void call_stack_call(const StackMachineState& state) {

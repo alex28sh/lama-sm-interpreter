@@ -26,7 +26,7 @@ You can check on programs in `examples` directory.
 Running my version:
 ```
 lamac -b Sort.lama
-time ./lama_sm_interpreter -i Sort.bc
+./lama_sm_interpreter -i Sort.bc
 ```
 
 Running lama interpreter:
@@ -35,8 +35,10 @@ lamac -i Sort.lama
 ```
 
 ##### Results:
-* 25s - my version
-* 15s - lama interpreter
+* 53 microseconds - verifier
+* 13.49 seconds - interpreter
+* 5s - lamac -s
+* 14s - lamac -i 
 
 ### Instruction sequences analysis
 
