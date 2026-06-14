@@ -8,19 +8,26 @@
 inline void call_stack_begin(const StackMachineState& state) {
     auto inst = state.instruction_decoder->consume_as<SimpleInstructionWithArgs<2>>();
     auto n_locals = inst.args[1];
+
+    auto max_stack = inst.args[0] >> 16;
+    if (__gc_stack_top + 1 < state.frame_stack->stack_data + max_stack + n_locals) {
+        throw std::runtime_error((std::ostringstream{} <<"Stack overflow at {}" << (state.instruction_decoder->code_ptr - inst.length())).str());
+    }
+
     state.frame_stack->reserve_locals(n_locals);
 }
 
-inline void call_stack_end(const StackMachineState& state) {
+inline bool call_stack_end(const StackMachineState& state) {
     state.instruction_decoder->consume_as<NoArgsInstruction>();
 
     auto val = state.frame_stack->peek_op();
     auto code_ptr = state.frame_stack->pop_stack_frame();
     if (code_ptr == nullptr) {
-        exit(0);
+        return true;
     }
     state.instruction_decoder->code_ptr = code_ptr;
     state.frame_stack->push_op(val);
+    return false;
 }
 
 inline void call_stack_call(const StackMachineState& state) {

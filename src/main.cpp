@@ -18,6 +18,8 @@
 #include "closures.hpp"
 #include "../runtime/runtime.h"
 #include "printers.hpp"
+#include "Verifier.hpp"
+#include <chrono>
 
 StackMachineState* external_state;
 
@@ -114,7 +116,9 @@ void interpret(bytefile *bf) {
                     break;
                 }
                 case END: {
-                    call_stack_end(state);
+                    if (call_stack_end(state)) {
+                        return;
+                    }
                     break;
                 }
                 case ELEM: {
@@ -198,6 +202,8 @@ void interpret(bytefile *bf) {
     }
 }
 
+using steady_clock_t = std::chrono::steady_clock;
+
 int main(int argc, char *argv[]) {
     if (argc < 3) {
         fprintf(stderr, "File is not given");
@@ -210,7 +216,21 @@ int main(int argc, char *argv[]) {
         analyzer.analyze();
         analyzer.results();
     } else if (std::strcmp(argv[1], "-i") == 0) {
+
+        auto t0 = steady_clock_t::now();
+        verify(bf);
+        auto t1 = steady_clock_t::now();
         interpret(bf);
+        auto t2 = steady_clock_t::now();
+
+        auto verify_ms = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
+        auto interpret_ms  = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+        auto whole_ms  = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t0).count();
+
+        constexpr auto time_const = 1000000.0;
+        std::cout << "Verify phase duration: " << verify_ms / time_const << "\n";
+        std::cout << "Interpret phase duration: " << interpret_ms / time_const << "\n";
+        std::cout << "Whole duration: " << whole_ms / time_const << "\n";
     } else if (std::strcmp(argv[1], "-p") == 0) {
         print_instructions(bf);
     } else {
