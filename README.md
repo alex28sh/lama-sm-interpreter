@@ -1,3 +1,5 @@
+This project aims at creating an Interpreter for a toy language [Lama](https://github.com/PLTools/Lama) with analysis capabilities.
+
 ### Usage
 
 #### Build
